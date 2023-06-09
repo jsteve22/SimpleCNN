@@ -24,3 +24,6 @@ for key in weights_paths.keys():
   print(f'{key} shape: {numpy_layer.shape}')
   print(f'{numpy_layer}')
   print()
+
+
+print( model.summary() )
