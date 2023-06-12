@@ -24,18 +24,20 @@ print(x_test.shape[0], "test samples")
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test  = keras.utils.to_categorical(y_test, num_classes)
 
-random_value = 13
+'''
+random_value = 11
 import pickle as pkl
 single_x_test = x_test[random_value]
 single_y_test = y_test[random_value]
 with open('single_test.pkl', 'wb') as f:
   pkl.dump( (single_x_test, single_y_test), f )
 exit()
+'''
 
 model = keras.Sequential(
   [
     keras.Input(shape=input_shape),
-    layers.Conv2D(4, kernel_size=(3,3), activation='relu'),
+    layers.Conv2D(1, kernel_size=(3,3), activation='relu'),
     # layers.MaxPooling2D(pool_size=(2, 2)),
     # layers.Conv2D(32, kernel_size=(2,2), activation='relu'),
     # layers.Conv2D(64, kernel_size=(3,3), activation='relu'),
@@ -62,5 +64,6 @@ print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
 model_name = 'simple_model'
+model_name = 'conv_model'
 
 model.save(f'./{model_name}.h5')
