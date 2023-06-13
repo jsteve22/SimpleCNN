@@ -9,22 +9,20 @@ def load_pickle(filename):
     return pkl.load(f)
 
 def main():
-  model_name = 'small_model'
-  tf_test(model_name)
-  print()
-  print()
-  print()
-  custom_test(model_name)
-  return
-
-def custom_test(model_name='small_model'):
-  single_test = load_pickle('single_test.pkl')
-
+  model_name = 'cifar_model'
+  single_test = load_pickle('cifar_test.pkl')
   Xtest = single_test[0]
   Ytest = single_test[1]
+  tf_test(model_name, Xtest, Ytest)
+  print()
+  print()
+  print()
+  custom_test(model_name, Xtest, Ytest)
+  return
 
+def custom_test(model_name, Xtest, Ytest):
 
-  Xtest = Xtest.reshape( (28,28) )
+  # Xtest = Xtest.reshape( (28,28) )
 
   # model_name = 'conv_model'
   model = tf.keras.models.load_model(f'{model_name}.h5')
@@ -34,13 +32,25 @@ def custom_test(model_name='small_model'):
   conv2d_kernel = weights_dictionary['conv2d.kernel'].numpy()
   conv2d_bias   = weights_dictionary['conv2d.bias'].numpy()
 
-  # print(conv2d_kernel.shape)
+  width, height, channels, filters = conv2d_kernel.shape
   # print(conv2d_kernel.T.shape)
 
-  conv2d_kernel = conv2d_kernel.T
-  filters, channels, width, height = conv2d_kernel.shape
-  conv2d_kernel = conv2d_kernel.reshape( (filters, width, height) )
-  
+  kernel = np.zeros( (filters, channels, width, height) )
+
+  for wi, w in enumerate(conv2d_kernel):
+    for hi, h in enumerate(w):
+      for ci, c in enumerate(h):
+        for fi, f in enumerate(c):
+          kernel[fi][ci][wi][hi] = f 
+  conv2d_kernel = kernel
+
+  image_height, image_width, image_channels = Xtest.shape
+  images = np.zeros( (image_channels, image_height, image_width) )
+  for wi, w in enumerate(Xtest):
+    for hi, h in enumerate(w):
+      for ci, c in enumerate(h):
+        images[ci][wi][hi] = c
+  Xtest = images
 
   output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel )
   output = np.array(output)
@@ -53,9 +63,17 @@ def custom_test(model_name='small_model'):
         if output[i][j][k] < 0:
           output[i][j][k] = 0
 
-  output = output.T
+  # output = output.T
   ## output = output.reshape((26*26*4))
-  output = output.reshape(26*26*filters)
+  # output = output.reshape(30*30*filters)
+  temp = np.zeros( (width, height, filters) )
+  for fi, f in enumerate(output):
+    for wi, w in enumerate(f):
+      for hi, h in enumerate(w):
+        temp[wi][hi][fi] = h
+  output = temp
+
+  output = output.reshape(width*height*filters)
 
   output = dense_layer_prediction.wrapper_dense_layer( output, 'dense', weights_dictionary )
   output = dense_layer_prediction.softmax( output )
@@ -66,13 +84,9 @@ def custom_test(model_name='small_model'):
     print(f'{pred:.7f}', end=' ')
   print(']')
 
-def tf_test(model_name='small_model'):
-  single_test = load_pickle('single_test.pkl')
+def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
   model = tf.keras.models.load_model(f'{model_name}.h5')
-
-  Xtest = single_test[0]
-  Ytest = single_test[1]
 
   Xtest = np.expand_dims(Xtest, 0)
   # print(f'Xtest: {Xtest}')
@@ -87,7 +101,7 @@ def tf_test(model_name='small_model'):
     pred = float(pred)
     print(f'{pred:.7f}', end=' ')
   print(']')
-  print(f'Acutal: {single_test[1]}')
+  print(f'Acutal: {Ytest}')
 
 if __name__ == '__main__':
   main()

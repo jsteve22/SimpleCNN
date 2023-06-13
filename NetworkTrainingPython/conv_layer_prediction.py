@@ -3,8 +3,8 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 
-def conv_layer_prediction(image, kernels):
-    z = multi_layer_convolution(image, kernels)
+def conv_layer_prediction(images, kernels):
+    z = multi_layer_convolution(images, kernels)
     return z
 
 def single_convolution(image, image_height, image_width, kernel, kernel_height, kernel_width):
@@ -21,13 +21,20 @@ def single_convolution(image, image_height, image_width, kernel, kernel_height, 
                     
     return z1
 
-def multi_layer_convolution(image, kernels):
+def multi_layer_convolution(images, kernels):
     convolutions = []
-    image_height = len(image)
-    image_width = len(image[0])
+    image_height = len(images[0])
+    image_width = len(images[0][0])
+    kernel_height = len(kernels[0][0])
+    kernel_width  = len(kernels[0][0][0])
+    z1_height = image_height - kernel_height + 1
+    z1_width = image_width - kernel_width + 1
     for kernel in kernels:
-        temp = single_convolution(image, image_height, image_width, kernel.T, len(kernel), len(kernel[0]))
-        temp = np.array(temp)
-        convolutions.append(temp.T)
+        next_conv = np.zeros( (z1_height, z1_width) )
+        for channel, image in zip(kernel, images):
+            temp = single_convolution(image, image_height, image_width, channel, kernel_height, kernel_width)
+            temp = np.array(temp)
+            next_conv += temp
+        convolutions.append(next_conv)
 
     return convolutions
