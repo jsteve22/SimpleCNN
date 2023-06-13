@@ -45,12 +45,49 @@ def dense_layer(input_layer, kernel, bias):
 
   return output_layer
 
-def wrapper_dense_layer(input_layer, layer_name, weights_dictionary):
+def scale_to_int(arr):
+  scale = 2**8
+  rescaled = arr * scale
+  return rescaled.astype(int)
+
+def wrapper_dense_layer(input_layer, layer_name, weights_dictionary, input_shape):
   dense_kernel = weights_dictionary[f'{layer_name}.kernel'].numpy()
   dense_bias   = weights_dictionary[f'{layer_name}.bias'].numpy()
+
+  dense_kernel = scale_to_int(dense_kernel)
+  dense_bias   = scale_to_int(dense_bias)
   
   dense_kernel = dense_kernel.T
+  dense_kernel = transform_dense_kernel(input_shape, dense_kernel)
   return dense_layer(input_layer, dense_kernel, dense_bias)
+
+def transform_dense_kernel(input_shape, dense_kernel):
+  layers = []
+  filters, width, height = input_shape
+  for layer in dense_kernel:
+    reshape = layer.reshape( (width, height, filters) )
+    temp = np.zeros( (filters, width, height) )
+    for wi, w in enumerate(reshape):
+      for hi, h in enumerate(w):
+        for fi, f in enumerate(h):
+          temp[fi][wi][hi] = f
+    layers.append( temp.reshape( width*height*filters ) )
+  return np.array( layers )
+  '''
+  filters, width, height = input_shape
+  layers = []
+  for layer in dense_kernel:
+    dense_layer = np.zeros( (filters*width*height) )
+    # print(f'dense_layer.shape = {dense_layer.shape}')
+    for ind, val in enumerate(layer):
+      filter_ind = ind%filters
+      width_ind  = (ind//filters) % width
+      height_ind = (ind//(filters*width))%height
+      ind_translate = (filter_ind*width*height) + (width_ind*height) + height_ind
+      dense_layer[ind_translate] = val
+    layers.append(dense_layer)
+  return np.array( layers )
+  '''
 
 def softmax(input_layer):
   from math import exp

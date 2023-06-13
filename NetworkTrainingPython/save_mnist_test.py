@@ -24,7 +24,7 @@ print(x_test.shape[0], "test samples")
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test  = keras.utils.to_categorical(y_test, num_classes)
 
-random_value = 10
+random_value = 9
 import pickle as pkl
 single_x_test = x_test[random_value]
 single_y_test = y_test[random_value]

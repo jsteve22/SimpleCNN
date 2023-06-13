@@ -20,8 +20,12 @@ def main():
   custom_test(model_name, Xtest, Ytest)
   return
 
-def custom_test(model_name, Xtest, Ytest):
+def scale_to_int(arr):
+  scale = 2**8
+  rescaled = arr * scale
+  return rescaled.astype(int)
 
+def custom_test(model_name, Xtest, Ytest):
   # Xtest = Xtest.reshape( (28,28) )
 
   # model_name = 'conv_model'
@@ -31,6 +35,10 @@ def custom_test(model_name, Xtest, Ytest):
 
   conv2d_kernel = weights_dictionary['conv2d.kernel'].numpy()
   conv2d_bias   = weights_dictionary['conv2d.bias'].numpy()
+
+  Xtest = scale_to_int(Xtest)
+  conv2d_kernel = scale_to_int(conv2d_kernel)
+  conv2d_bias = scale_to_int(conv2d_bias)
 
   width, height, channels, filters = conv2d_kernel.shape
   # print(conv2d_kernel.T.shape)
@@ -66,16 +74,26 @@ def custom_test(model_name, Xtest, Ytest):
   # output = output.T
   ## output = output.reshape((26*26*4))
   # output = output.reshape(30*30*filters)
+  '''
   temp = np.zeros( (width, height, filters) )
   for fi, f in enumerate(output):
     for wi, w in enumerate(f):
       for hi, h in enumerate(w):
         temp[wi][hi][fi] = h
   output = temp
+  '''
 
   output = output.reshape(width*height*filters)
 
-  output = dense_layer_prediction.wrapper_dense_layer( output, 'dense', weights_dictionary )
+  output = dense_layer_prediction.wrapper_dense_layer( output, 'dense', weights_dictionary, (filters, width, height) )
+  # print(output)
+  max_scale = max(output)
+  norm_scale = (2**8)**3
+  for ind, val in enumerate(output):
+    output[ind] = val / norm_scale
+    # print(f'{val/max_scale}', end=' ')
+
+  # print(output)
   output = dense_layer_prediction.softmax( output )
   # print( output )
   print(f'Prediction: [', end=' ')
