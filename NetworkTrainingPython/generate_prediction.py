@@ -3,14 +3,15 @@ import pickle as pkl
 import tensorflow as tf
 import conv_layer_prediction
 import dense_layer_prediction
+from write_weights import write_weights, read_weights
 
 def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
     return pkl.load(f)
 
 def main():
-  model_name = 'cifar_model'
-  single_test = load_pickle('cifar_test.pkl')
+  model_name = 'small_model'
+  single_test = load_pickle('single_test.pkl')
   Xtest = single_test[0]
   Ytest = single_test[1]
   tf_test(model_name, Xtest, Ytest)
@@ -29,28 +30,24 @@ def custom_test(model_name, Xtest, Ytest):
   # Xtest = Xtest.reshape( (28,28) )
 
   # model_name = 'conv_model'
-  model = tf.keras.models.load_model(f'{model_name}.h5')
-  weights_dictionary = model.get_weight_paths()
+  #model = tf.keras.models.load_model(f'{model_name}.h5')
+  #weights_dictionary = model.get_weight_paths()
   # print(weights_dictionary.keys())
 
-  conv2d_kernel = weights_dictionary['conv2d.kernel'].numpy()
-  conv2d_bias   = weights_dictionary['conv2d.bias'].numpy()
+  #conv2d_kernel = weights_dictionary['conv2d.kernel'].numpy()
+  #conv2d_bias   = weights_dictionary['conv2d.bias'].numpy()
 
-  Xtest = scale_to_int(Xtest)
-  conv2d_kernel = scale_to_int(conv2d_kernel)
-  conv2d_bias = scale_to_int(conv2d_bias)
+  conv2d_kernel = read_weights("conv2d.kernel.txt")
+  conv2d_bias = read_weights("conv2d.bias.txt")
 
-  width, height, channels, filters = conv2d_kernel.shape
+  #Xtest = scale_to_int(Xtest)
+  #conv2d_kernel = scale_to_int(conv2d_kernel)
+  #conv2d_bias = scale_to_int(conv2d_bias)
+
+  #width, height, channels, filters = conv2d_kernel.shape
   # print(conv2d_kernel.T.shape)
 
-  kernel = np.zeros( (filters, channels, width, height) )
 
-  for wi, w in enumerate(conv2d_kernel):
-    for hi, h in enumerate(w):
-      for ci, c in enumerate(h):
-        for fi, f in enumerate(c):
-          kernel[fi][ci][wi][hi] = f 
-  conv2d_kernel = kernel
 
   image_height, image_width, image_channels = Xtest.shape
   images = np.zeros( (image_channels, image_height, image_width) )
@@ -59,6 +56,7 @@ def custom_test(model_name, Xtest, Ytest):
       for ci, c in enumerate(h):
         images[ci][wi][hi] = c
   Xtest = images
+
 
   output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel )
   output = np.array(output)
@@ -85,12 +83,17 @@ def custom_test(model_name, Xtest, Ytest):
 
   output = output.reshape(width*height*filters)
 
-  output = dense_layer_prediction.wrapper_dense_layer( output, 'dense', weights_dictionary, (filters, width, height) )
+  dense_kernel = read_weights("dense.kernel.txt")
+  dense_bias = read_weights("dense.bias.txt")
+
+
+  output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
   # print(output)
   max_scale = max(output)
   norm_scale = (2**8)**3
   for ind, val in enumerate(output):
-    output[ind] = val / norm_scale
+    pass
+    #output[ind] = val / norm_scale
     # print(f'{val/max_scale}', end=' ')
 
   # print(output)

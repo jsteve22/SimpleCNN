@@ -57,11 +57,11 @@ def wrapper_dense_layer(input_layer, layer_name, weights_dictionary, input_shape
   dense_kernel = scale_to_int(dense_kernel)
   dense_bias   = scale_to_int(dense_bias)
   
-  dense_kernel = dense_kernel.T
   dense_kernel = transform_dense_kernel(input_shape, dense_kernel)
   return dense_layer(input_layer, dense_kernel, dense_bias)
 
 def transform_dense_kernel(input_shape, dense_kernel):
+  dense_kernel = dense_kernel.T
   layers = []
   filters, width, height = input_shape
   for layer in dense_kernel:
