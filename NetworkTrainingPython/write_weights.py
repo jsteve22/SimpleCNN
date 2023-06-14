@@ -26,12 +26,12 @@ def write_weights(model_name, image_shape):
                         for fi, f in enumerate(c):
                             kernel[fi][ci][wi][hi] = f 
             numpy_layer = kernel
-            fp.write(f"{filters} {channels} {height} {width}\n")
+            fp.write(f"{filters} {channels} {height} {width} \n")
             total_sz = filters * channels * height * width
         elif "dense" in key and "kernel" in key:
             numpy_layer = transform_dense_kernel((dense_kernel_f, dense_kernel_w, dense_kernel_h), numpy_layer)
             channels, vectors = numpy_layer.shape
-            fp.write(f"{channels} {vectors}\n")
+            fp.write(f"{channels} {vectors} \n")
             total_sz = channels * vectors
         else: 
             sz = ""
