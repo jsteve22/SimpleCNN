@@ -4,6 +4,7 @@ import tensorflow as tf
 import conv_layer_prediction
 import dense_layer_prediction
 from write_weights import write_weights, read_weights
+from custom_bfv.bfv import BFV
 
 def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
@@ -47,6 +48,7 @@ def custom_test(model_name, Xtest, Ytest):
   #width, height, channels, filters = conv2d_kernel.shape
   # print(conv2d_kernel.T.shape)
 
+  enc_scheme = BFV(q = 2**60, t = 2**20, n = 2**8)
 
 
   image_height, image_width, image_channels = Xtest.shape
@@ -58,7 +60,7 @@ def custom_test(model_name, Xtest, Ytest):
   Xtest = images
 
 
-  output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel )
+  output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel, enc_scheme )
   output = np.array(output)
 
   filters, width, height = output.shape
