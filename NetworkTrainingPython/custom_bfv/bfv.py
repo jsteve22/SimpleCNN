@@ -8,7 +8,7 @@ import random
 import sys
 
 import pdb
-from poly import Poly
+from .poly import Poly
 
 def main():
 	# this main function is using the lpr() class
