@@ -1,13 +1,14 @@
 import numpy as np
 from tensorflow import keras
 from tensorflow.keras import layers
+import conv_layer_poly_mult
 
 
-def conv_layer_prediction(images, kernels):
-    z = multi_layer_convolution(images, kernels)
+def conv_layer_prediction(images, kernels, BFV=None):
+    z = multi_layer_convolution(images, kernels, BFV)
     return z
 
-def single_convolution(image, image_height, image_width, kernel, kernel_height, kernel_width):
+def single_convolution(image, image_height, image_width, kernel, kernel_height, kernel_width, BFV=None):
     z1_height = image_height - kernel_height + 1
     z1_width = image_width - kernel_width + 1
     z1 = [ [0]*z1_width for _ in range(z1_height)] # [z1_height][z1_width]
@@ -21,7 +22,7 @@ def single_convolution(image, image_height, image_width, kernel, kernel_height, 
                     
     return z1
 
-def multi_layer_convolution(images, kernels):
+def multi_layer_convolution(images, kernels, BFV=None):
     convolutions = []
     image_height = len(images[0])
     image_width = len(images[0][0])
@@ -32,7 +33,7 @@ def multi_layer_convolution(images, kernels):
     for kernel in kernels:
         next_conv = np.zeros( (z1_height, z1_width) )
         for channel, image in zip(kernel, images):
-            temp = single_convolution(image, image_height, image_width, channel, kernel_height, kernel_width)
+            temp = conv_layer_poly_mult.single_convolution(image, image_height, image_width, channel, kernel_height, kernel_width, BFV)
             temp = np.array(temp)
             next_conv += temp
         convolutions.append(next_conv)
