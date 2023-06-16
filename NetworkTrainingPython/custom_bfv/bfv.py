@@ -8,7 +8,7 @@ import random
 import sys
 
 import pdb
-from .poly import Poly
+from custom_bfv.poly import Poly
 
 def main():
 	# this main function is using the lpr() class
@@ -350,6 +350,14 @@ class BFV():
 
 		z = z % self.q
 		return z
+	
+	def plaintext_mult(self, ciphertext, plaintext):
+		"""
+		multiply a ciphertext by a plaintext
+		"""
+
+		ret = ( self.polymult(ciphertext[0], plaintext), self.polymult(ciphertext[1], plaintext) )
+		return ret
 
 	def gen_normal_poly(self,c=0,std=None):
 		"""
