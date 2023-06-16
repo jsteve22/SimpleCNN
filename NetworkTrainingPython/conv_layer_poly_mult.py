@@ -9,23 +9,25 @@ def single_convolution(og_image, image_height, image_width, og_kernel, kernel_he
     z1 = [ [0]*z1_width for _ in range(z1_height)] # [z1_height][z1_width]
 
     image = og_image.reshape(image_height * image_width)
+    image = image.astype(int)
     image = Poly(image.tolist())
 
     encrypted_image = enc_scheme.encrypt(image)
 
-    kernel = og_kernel[0].tolist()
+    kernel = og_kernel[0].astype(int).tolist()
     
     for row in og_kernel[1:]:
-        kernel.append([0]*(image_height - kernel_height))
+        kernel += [0]*(image_height - kernel_height)
         arr = []
         for j in row:
-            arr.append(j)
-        kernel.append(arr)
-        
+            arr.append(int(j))
+        kernel += arr
+    kernel = np.flip(kernel).astype(int).tolist()
     kernel = Poly(kernel)
     
     output = enc_scheme.plaintext_mult(encrypted_image, kernel)
     output = enc_scheme.decrypt(output)
+    output = image * kernel
 
     for i in range(len(z1)):
         for j in range(len(z1[0])):

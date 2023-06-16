@@ -3,6 +3,7 @@ import pickle as pkl
 import tensorflow as tf
 import conv_layer_prediction
 import dense_layer_prediction
+import dense_layer_poly_mult
 from write_weights import write_weights, read_weights
 from custom_bfv.bfv import BFV
 
@@ -41,18 +42,17 @@ def custom_test(model_name, Xtest, Ytest):
   conv2d_kernel = read_weights("conv2d.kernel.txt")
   conv2d_bias = read_weights("conv2d.bias.txt")
 
-  #Xtest = scale_to_int(Xtest)
-  #conv2d_kernel = scale_to_int(conv2d_kernel)
-  #conv2d_bias = scale_to_int(conv2d_bias)
+  Xtest = scale_to_int(Xtest)
+  conv2d_kernel = scale_to_int(conv2d_kernel)
+  conv2d_bias = scale_to_int(conv2d_bias)
 
   #width, height, channels, filters = conv2d_kernel.shape
   # print(conv2d_kernel.T.shape)
 
-  enc_scheme = BFV(q = 2**60, t = 2**20, n = 2**8)
-
+  enc_scheme = BFV(q = 2**60, t = 2**35, n = 2**10)
 
   image_height, image_width, image_channels = Xtest.shape
-  images = np.zeros( (image_channels, image_height, image_width) )
+  images = np.zeros( (image_channels, image_height, image_width), dtype=int )
   for wi, w in enumerate(Xtest):
     for hi, h in enumerate(w):
       for ci, c in enumerate(h):
@@ -87,14 +87,21 @@ def custom_test(model_name, Xtest, Ytest):
 
   dense_kernel = read_weights("dense.kernel.txt")
   dense_bias = read_weights("dense.bias.txt")
+  dense_kernel = scale_to_int(dense_kernel)
+  dense_bias = scale_to_int(dense_bias)
 
-  output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
+  # norm_output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
+  output = dense_layer_poly_mult.dense_layer( output, dense_kernel, dense_bias, enc_scheme )
+  # print(norm_output)
+  # print(enc_output)
+  # return
+
   # print(output)
-  max_scale = max(output)
+  # max_scale = max(output)
   norm_scale = (2**8)**3
   for ind, val in enumerate(output):
     pass
-    #output[ind] = val / norm_scale
+    output[ind] = val / norm_scale
     # print(f'{val/max_scale}', end=' ')
 
   # print(output)

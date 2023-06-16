@@ -33,7 +33,8 @@ def multi_layer_convolution(images, kernels, BFV=None):
     for kernel in kernels:
         next_conv = np.zeros( (z1_height, z1_width) )
         for channel, image in zip(kernel, images):
-            temp = conv_layer_poly_mult.single_convolution(image, image_height, image_width, channel, kernel_height, kernel_width, BFV)
+            # temp = conv_layer_poly_mult.single_convolution(image, image_height, image_width, channel, kernel_height, kernel_width, BFV)
+            temp = single_convolution(image, image_height, image_width, channel, kernel_height, kernel_width, BFV)
             temp = np.array(temp)
             next_conv += temp
         convolutions.append(next_conv)
