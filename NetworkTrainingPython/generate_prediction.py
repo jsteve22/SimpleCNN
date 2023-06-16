@@ -86,7 +86,6 @@ def custom_test(model_name, Xtest, Ytest):
   dense_kernel = read_weights("dense.kernel.txt")
   dense_bias = read_weights("dense.bias.txt")
 
-
   output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
   # print(output)
   max_scale = max(output)
