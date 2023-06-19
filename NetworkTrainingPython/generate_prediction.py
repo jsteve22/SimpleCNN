@@ -5,7 +5,8 @@ import conv_layer_prediction
 import dense_layer_prediction
 import dense_layer_poly_mult
 from write_weights import write_weights, read_weights
-from custom_bfv.bfv import BFV
+# from custom_bfv.bfv import BFV
+from custom_bfv.bfv_ntt import BFV
 
 def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
@@ -49,7 +50,7 @@ def custom_test(model_name, Xtest, Ytest):
   #width, height, channels, filters = conv2d_kernel.shape
   # print(conv2d_kernel.T.shape)
 
-  enc_scheme = BFV(q = 2**60, t = 2**35, n = 2**10)
+  enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
 
   image_height, image_width, image_channels = Xtest.shape
   images = np.zeros( (image_channels, image_height, image_width), dtype=int )
@@ -68,6 +69,7 @@ def custom_test(model_name, Xtest, Ytest):
     for j in range(width):
       for k in range(height):
         output[i][j][k] += conv2d_bias[i]
+        output[i][j][k] //= 2**8
         if output[i][j][k] < 0:
           output[i][j][k] = 0
 
@@ -90,7 +92,7 @@ def custom_test(model_name, Xtest, Ytest):
   dense_kernel = scale_to_int(dense_kernel)
   dense_bias = scale_to_int(dense_bias)
 
-  # norm_output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
+  # output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
   output = dense_layer_poly_mult.dense_layer( output, dense_kernel, dense_bias, enc_scheme )
   # print(norm_output)
   # print(enc_output)
@@ -99,6 +101,7 @@ def custom_test(model_name, Xtest, Ytest):
   # print(output)
   # max_scale = max(output)
   norm_scale = (2**8)**3
+  norm_scale = (2**8)**2
   for ind, val in enumerate(output):
     pass
     output[ind] = val / norm_scale
