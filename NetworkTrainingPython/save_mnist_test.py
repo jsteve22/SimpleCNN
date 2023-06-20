@@ -30,3 +30,24 @@ single_x_test = x_test[random_value]
 single_y_test = y_test[random_value]
 with open('single_test.pkl', 'wb') as f:
   pkl.dump( (single_x_test, single_y_test), f )
+
+Xtest = single_x_test
+image_height, image_width, image_channels = Xtest.shape
+images = np.zeros( (image_channels, image_height, image_width) )
+for wi, w in enumerate(Xtest):
+  for hi, h in enumerate(w):
+    for ci, c in enumerate(h):
+      images[ci][wi][hi] = c
+Xtest = images
+
+print( Xtest.shape )
+
+with open('mnist_image.txt', 'w') as f:
+  channels, width, height = Xtest.shape
+  f.write(f'{channels} {width*height}\n')
+  for channel in Xtest:
+    for row in channel:
+      for value in row:
+        value = int( value * (2**8) )
+        f.write(f'{value} ')
+  f.write('\n')
