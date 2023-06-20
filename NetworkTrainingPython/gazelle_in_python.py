@@ -2,6 +2,28 @@ import dense_layer_prediction
 import conv_layer_prediction
 import numpy as np
 
+def read_weights(file_name):
+    with open(file_name, "r") as fp:
+        line = fp.readline().rstrip()
+        dims = list(map(int, line.split(" ")))
+        nums = fp.readline().rstrip()
+        nums = list(map(int, nums.split(" ")))
+        #for i in range(len(nums)):
+        #    nums[i] = int(nums[i] % 2**64)
+        test_nums = []
+        for i in range(dims[0]):
+            k = 0
+            for j in range(dims[1]):
+                test_nums.append(nums[2704*i + k])
+                k+=1
+        test_nums = np.array(test_nums)
+        test_nums = test_nums.reshape(dims)
+        size = dims[1]
+        # nums = np.array(nums)
+        # nums = nums.reshape(dims)
+        #print(nums)
+    return test_nums, size
+
 def make_fc_matrix():
     matrix = []
     ct = 0
@@ -17,17 +39,19 @@ def make_fc_matrix():
 
     return matrix
 
-def make_fc_input():
+def make_fc_input(size):
     inpt = []
 
-    for i in range(25):
+    for i in range(size):
         inpt.append(1)
 
     return inpt
 
 def test_dense_layer():
-    matrix = make_fc_matrix()
-    inpt = make_fc_input()
+    # matrix = make_fc_matrix()
+    matrix, size = read_weights("dense.kernel.txt")
+    print(matrix)
+    inpt = make_fc_input(size)
 
     bias = [0] * 25
     output = dense_layer_prediction.dense_layer(inpt, matrix, bias)
@@ -83,15 +107,21 @@ def make_conv_filter():
     return ftr
 
 def test_conv_layer():
-    ftr = make_conv_filter()
+    # ftr = make_conv_filter()
+    ftr = read_weights("conv2d.kernel.txt")
+    print(ftr)
+
     image = make_conv_image_2()
 
     output = conv_layer_prediction.conv_layer_prediction(image, ftr)
 
     return output
 
-output = test_conv_layer()
+# output = test_conv_layer()
+output = test_dense_layer()
 print(output)
+
+
 
 
 
