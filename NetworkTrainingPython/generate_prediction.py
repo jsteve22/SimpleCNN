@@ -30,25 +30,13 @@ def scale_to_int(arr):
   return rescaled.astype(int)
 
 def custom_test(model_name, Xtest, Ytest):
-  # Xtest = Xtest.reshape( (28,28) )
-
-  # model_name = 'conv_model'
-  #model = tf.keras.models.load_model(f'{model_name}.h5')
-  #weights_dictionary = model.get_weight_paths()
-  # print(weights_dictionary.keys())
-
-  #conv2d_kernel = weights_dictionary['conv2d.kernel'].numpy()
-  #conv2d_bias   = weights_dictionary['conv2d.bias'].numpy()
 
   conv2d_kernel = read_weights("conv2d.kernel.txt")
   conv2d_bias = read_weights("conv2d.bias.txt")
 
   Xtest = scale_to_int(Xtest)
-  conv2d_kernel = scale_to_int(conv2d_kernel)
-  conv2d_bias = scale_to_int(conv2d_bias)
-
-  #width, height, channels, filters = conv2d_kernel.shape
-  # print(conv2d_kernel.T.shape)
+  # conv2d_kernel = scale_to_int(conv2d_kernel)
+  # conv2d_bias = scale_to_int(conv2d_bias)
 
   enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
 
@@ -59,7 +47,6 @@ def custom_test(model_name, Xtest, Ytest):
       for ci, c in enumerate(h):
         images[ci][wi][hi] = c
   Xtest = images
-
 
   output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel, enc_scheme )
   output = np.array(output)
@@ -76,27 +63,16 @@ def custom_test(model_name, Xtest, Ytest):
   # output = output.T
   ## output = output.reshape((26*26*4))
   # output = output.reshape(30*30*filters)
-  '''
-  temp = np.zeros( (width, height, filters) )
-  for fi, f in enumerate(output):
-    for wi, w in enumerate(f):
-      for hi, h in enumerate(w):
-        temp[wi][hi][fi] = h
-  output = temp
-  '''
 
   output = output.reshape(width*height*filters)
 
   dense_kernel = read_weights("dense.kernel.txt")
   dense_bias = read_weights("dense.bias.txt")
-  dense_kernel = scale_to_int(dense_kernel)
-  dense_bias = scale_to_int(dense_bias)
+  # dense_kernel = scale_to_int(dense_kernel)
+  # dense_bias = scale_to_int(dense_bias)
 
-  # output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
-  output = dense_layer_poly_mult.dense_layer( output, dense_kernel, dense_bias, enc_scheme )
-  # print(norm_output)
-  # print(enc_output)
-  # return
+  output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
+  # output = dense_layer_poly_mult.dense_layer( output, dense_kernel, dense_bias, enc_scheme )
 
   # print(output)
   # max_scale = max(output)
