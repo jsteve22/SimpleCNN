@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-model_name = 'simple_model'
+model_name = 'miniONN_cifar_model'
 
 model = load_model(f'./{model_name}.h5')
 

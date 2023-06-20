@@ -12,7 +12,7 @@ def write_weights(model_name, image_shape):
 
     for key in weights_paths:
         layer = weights_paths[key]
-        fp = open(f"{key}.txt", "w")
+        fp = open(f"{model_name}/{key}.txt", "w")
         numpy_layer = layer.numpy()
         if "conv" in key and "kernel" in key:
             width, height, channels, filters = numpy_layer.shape
@@ -56,5 +56,7 @@ def read_weights(file_name):
         #print(nums)
     return nums
 
-write_weights("simple_model", (28, 28, 1, 4))
-#read_weights("dense.kernel.txt")
+
+if __name__ == '__main__':
+    write_weights("miniONN_cifar_model", (32, 32, 3, 1))
+    #read_weights("dense.kernel.txt")

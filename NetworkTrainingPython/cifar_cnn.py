@@ -37,7 +37,15 @@ exit()
 model = keras.Sequential(
   [
     keras.Input(shape=input_shape),
-    layers.Conv2D(4, kernel_size=(3,3), activation='relu'),
+    layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    layers.AveragePooling2D(),
+    layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    layers.AveragePooling2D(),
+    layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    layers.Conv2D(64, kernel_size=(1,1), activation='relu', use_bias=False),
+    layers.Conv2D(16, kernel_size=(1,1), activation='relu', use_bias=False),
     # layers.MaxPooling2D(pool_size=(2, 2)),
     # layers.Conv2D(32, kernel_size=(2,2), activation='relu'),
     # layers.Conv2D(64, kernel_size=(3,3), activation='relu'),
@@ -45,7 +53,7 @@ model = keras.Sequential(
     # layers.Conv2D(32, kernel_size=(2,2), activation='relu'),
     layers.Flatten(),
     # layers.Dropout(0.5),
-    layers.Dense(num_classes, activation='softmax'),
+    layers.Dense(num_classes, activation='softmax', use_bias=False),
   ]
 )
 
@@ -63,6 +71,6 @@ score = model.evaluate(x_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
-model_name = 'cifar_model'
+model_name = 'miniONN_cifar_model'
 
 model.save(f'./{model_name}.h5')
