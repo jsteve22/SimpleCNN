@@ -93,7 +93,7 @@ def custom_test(model_name, Xtest, Ytest):
 
 def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
-  model = tf.keras.models.load_model(f'{model_name}.h5')
+  model = tf.keras.models.load_model(f'./models/{model_name}.h5')
 
   Xtest = np.expand_dims(Xtest, 0)
   # print(f'Xtest: {Xtest}')
