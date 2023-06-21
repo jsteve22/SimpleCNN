@@ -5,7 +5,7 @@ from custom_bfv.bfv import BFV
 from custom_bfv.poly import Poly
 
 
-def dense_layer(input_layer, kernel, bias, enc_scheme):
+def dense_layer(enc_scheme, input_layer, kernel, bias=None):
   '''
   output_count, length = kernel.shape
   i = Poly(input_layer.astype(int).tolist())
@@ -17,6 +17,9 @@ def dense_layer(input_layer, kernel, bias, enc_scheme):
   output_count, length = kernel.shape
   split = 4
   length = length // split
+
+
+  bias = bias if bias is None else [0]*output_count
 
   poly_input = input_layer.astype(int).tolist()
   enc_input_layers = []

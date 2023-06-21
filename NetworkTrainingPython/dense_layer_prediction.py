@@ -34,8 +34,11 @@ def dot_product(vec_a, vec_b, size=None):
   '''
 
 # it is assumed that the kernel and bias will be numpy arrays and that they have been processed before
-def dense_layer(input_layer, kernel, bias):
+def dense_layer(input_layer, kernel, bias=None):
   output_count, length = kernel.shape
+
+
+  bias = bias if bias is None else [0]*output_count
 
   output_layer = [0]*output_count
   for ind in range(output_count):

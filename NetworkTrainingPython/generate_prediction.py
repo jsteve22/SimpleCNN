@@ -31,15 +31,8 @@ def scale_to_int(arr):
 
 def custom_test(model_name, Xtest, Ytest):
 
-  conv2d_kernel = read_weights("conv2d.kernel.txt")
-  conv2d_bias = read_weights("conv2d.bias.txt")
-
+  # Load and reshape the test image
   Xtest = scale_to_int(Xtest)
-  # conv2d_kernel = scale_to_int(conv2d_kernel)
-  # conv2d_bias = scale_to_int(conv2d_bias)
-
-  enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
-
   image_height, image_width, image_channels = Xtest.shape
   images = np.zeros( (image_channels, image_height, image_width), dtype=int )
   for wi, w in enumerate(Xtest):
@@ -48,6 +41,12 @@ def custom_test(model_name, Xtest, Ytest):
         images[ci][wi][hi] = c
   Xtest = images
 
+  # load in the weights for the conv2d layer
+  conv2d_kernel = read_weights("conv2d.kernel.txt")
+  conv2d_bias = read_weights("conv2d.bias.txt")
+
+  enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
+
   output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel, enc_scheme )
   output = np.array(output)
 
@@ -55,35 +54,30 @@ def custom_test(model_name, Xtest, Ytest):
   for i in range(filters):
     for j in range(width):
       for k in range(height):
+        if output[i][j][k] < 0:
+          output[i][j][k] = 0
+        continue
         output[i][j][k] += conv2d_bias[i]
         output[i][j][k] //= 2**8
         if output[i][j][k] < 0:
           output[i][j][k] = 0
 
-  # output = output.T
-  ## output = output.reshape((26*26*4))
-  # output = output.reshape(30*30*filters)
-
   output = output.reshape(width*height*filters)
 
   dense_kernel = read_weights("dense.kernel.txt")
   dense_bias = read_weights("dense.bias.txt")
-  # dense_kernel = scale_to_int(dense_kernel)
-  # dense_bias = scale_to_int(dense_bias)
 
   output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
-  # output = dense_layer_poly_mult.dense_layer( output, dense_kernel, dense_bias, enc_scheme )
+  # output = dense_layer_poly_mult.dense_layer( enc_scheme, output, dense_kernel, dense_bias )
 
-  # print(output)
-  # max_scale = max(output)
-  norm_scale = (2**8)**3
+  print(output)
+  return
   norm_scale = (2**8)**2
   for ind, val in enumerate(output):
+    output[ind] = val // norm_scale
     pass
-    output[ind] = val / norm_scale
     # print(f'{val/max_scale}', end=' ')
 
-  # print(output)
   output = dense_layer_prediction.softmax( output )
   # print( output )
   print(f'Prediction: [', end=' ')

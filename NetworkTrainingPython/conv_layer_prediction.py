@@ -4,7 +4,11 @@ from tensorflow.keras import layers
 import conv_layer_poly_mult
 
 
-def conv_layer_prediction(images, kernels, BFV=None):
+def conv_layer_prediction(images, kernels, BFV=None, padding=False):
+    if padding:
+        for ind, image in enumerate(images):
+            images[ind] = pad_image( image )
+
     z = multi_layer_convolution(images, kernels, BFV)
     return z
 
@@ -40,3 +44,11 @@ def multi_layer_convolution(images, kernels, BFV=None):
         convolutions.append(next_conv)
 
     return convolutions
+
+def pad_image(image):
+    width, height = image.shape
+    padded_image = np.zeros( (width+2, height+2), dtype=image.dtype )
+    for ind, row in enumerate(image):
+        for jnd, value in enumerate(row):
+            padded_image[ind + 1][jdn + 1] = value
+    return padded_image
