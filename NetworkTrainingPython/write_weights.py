@@ -63,6 +63,7 @@ def write_weights(model_name, image_shape):
 
         numpy_layer = numpy_layer.reshape(total_sz)
         for i in numpy_layer:
+            # fp.write(f"{i} ")
             fp.write(f"{int(i * (2**8))} ")
 
 def read_weights(file_name):
@@ -70,7 +71,7 @@ def read_weights(file_name):
         line = fp.readline().rstrip()
         dims = list(map(int, line.split(" ")))
         nums = fp.readline().rstrip()
-        nums = list(map(int, nums.split(" ")))
+        nums = list(map(float, nums.split(" ")))
         nums = np.array(nums)
         nums = nums.reshape(dims)
         #print(nums)
