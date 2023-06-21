@@ -38,7 +38,7 @@ def dense_layer(input_layer, kernel, bias=None):
   output_count, length = kernel.shape
 
 
-  bias = bias if bias is None else [0]*output_count
+  bias = bias if bias is not None else [0]*output_count
 
   output_layer = [0]*output_count
   for ind in range(output_count):
@@ -48,17 +48,10 @@ def dense_layer(input_layer, kernel, bias=None):
 
   return output_layer
 
-def scale_to_int(arr):
-  scale = 2**8
-  rescaled = arr * scale
-  return rescaled.astype(int)
 
 def wrapper_dense_layer(input_layer, layer_name, weights_dictionary, input_shape):
   dense_kernel = weights_dictionary[f'{layer_name}.kernel'].numpy()
   dense_bias   = weights_dictionary[f'{layer_name}.bias'].numpy()
-
-  # dense_kernel = scale_to_int(dense_kernel)
-  # dense_bias   = scale_to_int(dense_bias)
   
   dense_kernel = transform_dense_kernel(input_shape, dense_kernel)
   return dense_layer(input_layer, dense_kernel, dense_bias)
