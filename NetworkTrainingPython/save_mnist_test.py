@@ -27,7 +27,7 @@ def main(test_num=None):
   y_train = keras.utils.to_categorical(y_train, num_classes)
   y_test  = keras.utils.to_categorical(y_test, num_classes)
 
-  random_value = 9 if test_num is None else test_num
+  random_value = 3 if test_num is None else test_num
   import pickle as pkl
   single_x_test = x_test[random_value]
   single_y_test = y_test[random_value]

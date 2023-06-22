@@ -90,6 +90,7 @@ def custom_test(model_name, Xtest, Ytest):
     pred = float(pred)
     print(f'{pred:.7f}', end=' ')
   print(']')
+  return output
 
 def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
@@ -109,9 +110,14 @@ def tf_test(model_name, Xtest, Ytest):
     print(f'{pred:.7f}', end=' ')
   print(']')
   print(f'Acutal: {Ytest}')
+  return Ypred[0]
 
 def test_many_mnist_examples():
-  for i in range(35):
+  num_tests = 1000
+  same_pred = 0
+  total_diff = 0
+  diff_arr = []
+  for i in range(num_tests):
     save_mnist_test.main(i)
     print(f'Test {i+1}')
     print('---'*8)
@@ -119,10 +125,20 @@ def test_many_mnist_examples():
     single_test = load_pickle('single_test.pkl')
     Xtest = single_test[0]
     Ytest = single_test[1]
-    tf_test(model_name, Xtest, Ytest)
-    custom_test(model_name, Xtest, Ytest)
+    tf_output  = tf_test(model_name, Xtest, Ytest)
+    our_output = custom_test(model_name, Xtest, Ytest)
+    if ( np.argmax(tf_output) == np.argmax(our_output) ):
+      same_pred += 1
+    diff = sum(map(abs, [t-o for t,o in zip(tf_output, our_output) ]))
+    diff_arr.append( diff )
+    total_diff += diff
+    print(f'diff: {diff}')
     print('\n'*2)
+  print(f'total diff:   {total_diff}')
+  print(f'average diff: {total_diff / num_tests}')
+  print(f'standard dev: {np.std(diff_arr)}')
+  print(f'same pred:    {same_pred} / {num_tests}')
 
 if __name__ == '__main__':
-  # test_many_mnist_examples()
-  main()
+  test_many_mnist_examples()
+  # main()

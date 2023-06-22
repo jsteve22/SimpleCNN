@@ -5,7 +5,7 @@ from dense_layer_prediction import transform_dense_kernel
 import os
 
 def write_weights(model_name, image_shape):
-    model = tf.keras.models.load_model(f'{model_name}.h5')
+    model = tf.keras.models.load_model(f'models/{model_name}.h5')
 
     try:
         os.mkdir(f'./model_weights/{model_name}')
