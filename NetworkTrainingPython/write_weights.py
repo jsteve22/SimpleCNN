@@ -63,8 +63,8 @@ def write_weights(model_name, image_shape):
 
         numpy_layer = numpy_layer.reshape(total_sz)
         for i in numpy_layer:
-            # fp.write(f"{i} ")
-            fp.write(f"{int(i * (2**8))} ")
+            fp.write(f"{i} ")
+            # fp.write(f"{int(i * (2**8))} ")
 
 def read_weights(file_name):
     with open(file_name, "r") as fp:
@@ -80,5 +80,6 @@ def read_weights(file_name):
 
 if __name__ == '__main__':
     # write_weights("miniONN_cifar_model", (32, 32, 3, 1))
-    write_weights("simple_model", (28, 28, 4, 1))
+    write_weights("4_layer_mnist_model", (28, 28, 4, 1))
+    # write_weights("simple_model", (28, 28, 4, 1))
     #read_weights("dense.kernel.txt")

@@ -4,7 +4,7 @@ from tensorflow.keras import layers
 
 # Model / data parameters
 num_classes = 10
-input_shape = (32, 32, 3)
+input_shape = (28, 28, 1)
 
 # Load the data and split it between train and test sets
 (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
@@ -12,6 +12,8 @@ input_shape = (32, 32, 3)
 # Scale images to the [0, 1] range
 x_train = x_train.astype('float32') / 255
 x_test  = x_test.astype('float32') / 255
+# x_train = x_train.astype(np.uint8)
+# x_test  = x_test.astype(np.uint8)
 # Make sure images have shape (28, 28, 1)
 # x_train = np.expand_dims(x_train, -1)
 # x_test  = np.expand_dims(x_test, -1)
@@ -39,13 +41,16 @@ model = keras.Sequential(
     keras.Input(shape=input_shape),
     layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
     layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
-    layers.AveragePooling2D(),
     layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
     layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
-    layers.AveragePooling2D(),
-    layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
-    layers.Conv2D(64, kernel_size=(1,1), activation='relu', use_bias=False),
-    layers.Conv2D(16, kernel_size=(1,1), activation='relu', use_bias=False),
+    # layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    # layers.AveragePooling2D(),
+    # layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    # layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    # layers.AveragePooling2D(),
+    # layers.Conv2D(64, kernel_size=(3,3), activation='relu', padding='same', use_bias=False),
+    # layers.Conv2D(64, kernel_size=(1,1), activation='relu', use_bias=False),
+    # layers.Conv2D(16, kernel_size=(1,1), activation='relu', use_bias=False),
     # layers.MaxPooling2D(pool_size=(2, 2)),
     # layers.Conv2D(32, kernel_size=(2,2), activation='relu'),
     # layers.Conv2D(64, kernel_size=(3,3), activation='relu'),
@@ -72,5 +77,6 @@ print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
 model_name = 'miniONN_cifar_model'
+model_name = '4_layer_mnist_model'
 
-model.save(f'./{model_name}.h5')
+model.save(f'./models/{model_name}.h5')

@@ -45,10 +45,16 @@ def multi_layer_convolution(images, kernels, BFV=None):
 
     return convolutions
 
+def pad_images(images):
+    ret = []
+    for image in images:
+        ret.append( pad_image(image) )
+    return np.array(ret)
+
 def pad_image(image):
     width, height = image.shape
     padded_image = np.zeros( (width+2, height+2), dtype=image.dtype )
     for ind, row in enumerate(image):
         for jnd, value in enumerate(row):
-            padded_image[ind + 1][jdn + 1] = value
+            padded_image[ind + 1][jnd + 1] = value
     return padded_image

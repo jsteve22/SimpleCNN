@@ -87,9 +87,20 @@ def transform_dense_kernel(input_shape, dense_kernel):
 
 def softmax(input_layer):
   from math import exp
-  exp_sum = sum( [exp(val) for val in input_layer] )
-  output_layer = [exp(val) / exp_sum for val in input_layer]
-  return output_layer
+  try:
+    exp_sum = sum( [exp(val) for val in input_layer] )
+    output_layer = [exp(val) / exp_sum for val in input_layer]
+    return output_layer
+  except OverflowError:
+    exp_vals = []
+    for val in input_layer:
+      try:
+        exp_vals.append( exp(val) )
+      except OverflowError:
+        exp_vals.append( float(1000) )
+    output_layer = [exp_val / sum(exp_vals) for exp_val in exp_vals]
+    return output_layer
+
 
 def test_softmax():
   arr = [1, 3, 2]

@@ -14,7 +14,7 @@ def load_pickle(filename):
     return pkl.load(f)
 
 def main():
-  model_name = 'simple_model'
+  model_name = '4_layer_mnist_model'
   single_test = load_pickle('single_test.pkl')
   Xtest = single_test[0]
   Ytest = single_test[1]
@@ -27,7 +27,27 @@ P_2_SCALE = 8
 def scale_to_int(arr):
   scale = 2**P_2_SCALE
   rescaled = arr * scale
+  # rescaled = np.round(rescaled)
   return rescaled.astype(int)
+
+def ReLU(arr):
+  ret = arr.copy()
+  
+  for i, image in enumerate(ret):
+    for j, row in enumerate(image):
+      for k, val in enumerate(row):
+        if val < 0:
+          ret[i][j][k] = 0
+  return ret
+
+def scale_down(arr, scale):
+  ret = arr.copy()
+  
+  for i, image in enumerate(ret):
+    for j, row in enumerate(image):
+      for k, val in enumerate(row):
+        ret[i][j][k] = val // scale
+  return ret
 
 def custom_test(model_name, Xtest, Ytest):
 
@@ -35,7 +55,7 @@ def custom_test(model_name, Xtest, Ytest):
   Xtest = scale_to_int(Xtest)
   image_height, image_width, image_channels = Xtest.shape
   images = np.zeros( (image_channels, image_height, image_width), dtype=int )
-  # images = np.zeros( (image_channels, image_height, image_width))
+  images = np.zeros( (image_channels, image_height, image_width))
   for wi, w in enumerate(Xtest):
     for hi, h in enumerate(w):
       for ci, c in enumerate(h):
@@ -46,40 +66,52 @@ def custom_test(model_name, Xtest, Ytest):
 
   # load in the weights for the conv2d layer
   conv2d_kernel = read_weights(f"{directory}/conv2d.kernel.txt")
-  conv2d_bias = read_weights(f"{directory}/conv2d.bias.txt")
+  # conv2d_bias = read_weights(f"{directory}/conv2d.bias.txt")
 
   enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
 
+  Xtest = conv_layer_prediction.pad_images( Xtest )
+
   output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel, enc_scheme )
   output = np.array(output)
+  output = ReLU(output)
+  # output = scale_down(output, 2**P_2_SCALE)
+
+  output = conv_layer_prediction.pad_images( output )
+  output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_1.kernel.txt"), enc_scheme )
+  output = np.array(output)
+  output = ReLU(output)
+  # output = scale_down(output, 2**P_2_SCALE)
+
+  output = conv_layer_prediction.pad_images( output )
+  output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_2.kernel.txt"), enc_scheme )
+  output = np.array(output)
+  output = ReLU(output)
+  # output = scale_down(output, 2**P_2_SCALE)
+
+  output = conv_layer_prediction.pad_images( output )
+  output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_3.kernel.txt"), enc_scheme )
+  output = np.array(output)
+  output = ReLU(output)
+  # output = scale_down(output, 2**P_2_SCALE)
 
   filters, width, height = output.shape
-  for i in range(filters):
-    for j in range(width):
-      for k in range(height):
-        '''
-        if output[i][j][k] < 0:
-          # print(f'relined: {output[i][j][k]}')
-          output[i][j][k] = 0
-        '''
-        output[i][j][k] += conv2d_bias[i]
-        output[i][j][k] //= 2**P_2_SCALE
-        if output[i][j][k] < 0:
-          output[i][j][k] = 0
-
   output = output.reshape(width*height*filters)
 
   dense_kernel = read_weights(f"{directory}/dense.kernel.txt")
-  dense_bias = read_weights(f"{directory}/dense.bias.txt")
+  # dense_bias = read_weights(f"{directory}/dense.bias.txt")
 
-  output = dense_layer_prediction.dense_layer( output, dense_kernel, dense_bias)
+  output = dense_layer_prediction.dense_layer( output, dense_kernel)
   # output = dense_layer_poly_mult.dense_layer( enc_scheme, output, dense_kernel, dense_bias )
 
-  # print(output)
-  # return
+  # PLAINTEXT_MODULUS = 2061584302081
+  # output = [o % (2**32) for o in output]
+  # output = [o - (2**32) if o > (2**31) else o for o in output]
+
+  max_scale = max(output)
   norm_scale = (2**P_2_SCALE)**2
   for ind, val in enumerate(output):
-    output[ind] = val // norm_scale
+    # output[ind] = val // norm_scale
     pass
     # print(f'{val/max_scale}', end=' ')
 
@@ -140,5 +172,5 @@ def test_many_mnist_examples():
   print(f'same pred:    {same_pred} / {num_tests}')
 
 if __name__ == '__main__':
-  test_many_mnist_examples()
-  # main()
+  # test_many_mnist_examples()
+  main()
