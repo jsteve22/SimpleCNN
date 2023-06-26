@@ -98,6 +98,7 @@ def softmax(input_layer):
         exp_vals.append( exp(val) )
       except OverflowError:
         exp_vals.append( float(1000) )
+    print(f'Warning OverflowError: \n\tinput = {input_layer}\n\texp_vals = {exp_vals}')
     output_layer = [exp_val / sum(exp_vals) for exp_val in exp_vals]
     return output_layer
 

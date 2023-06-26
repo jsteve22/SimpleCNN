@@ -55,7 +55,7 @@ def custom_test(model_name, Xtest, Ytest):
   Xtest = scale_to_int(Xtest)
   image_height, image_width, image_channels = Xtest.shape
   images = np.zeros( (image_channels, image_height, image_width), dtype=int )
-  images = np.zeros( (image_channels, image_height, image_width))
+  # images = np.zeros( (image_channels, image_height, image_width))
   for wi, w in enumerate(Xtest):
     for hi, h in enumerate(w):
       for ci, c in enumerate(h):
@@ -75,25 +75,25 @@ def custom_test(model_name, Xtest, Ytest):
   output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel, enc_scheme )
   output = np.array(output)
   output = ReLU(output)
-  # output = scale_down(output, 2**P_2_SCALE)
+  output = scale_down(output, 2**P_2_SCALE)
 
   output = conv_layer_prediction.pad_images( output )
   output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_1.kernel.txt"), enc_scheme )
   output = np.array(output)
   output = ReLU(output)
-  # output = scale_down(output, 2**P_2_SCALE)
+  output = scale_down(output, 2**P_2_SCALE)
 
   output = conv_layer_prediction.pad_images( output )
   output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_2.kernel.txt"), enc_scheme )
   output = np.array(output)
   output = ReLU(output)
-  # output = scale_down(output, 2**P_2_SCALE)
+  output = scale_down(output, 2**P_2_SCALE)
 
   output = conv_layer_prediction.pad_images( output )
   output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_3.kernel.txt"), enc_scheme )
   output = np.array(output)
   output = ReLU(output)
-  # output = scale_down(output, 2**P_2_SCALE)
+  output = scale_down(output, 2**P_2_SCALE)
 
   filters, width, height = output.shape
   output = output.reshape(width*height*filters)
@@ -111,7 +111,7 @@ def custom_test(model_name, Xtest, Ytest):
   max_scale = max(output)
   norm_scale = (2**P_2_SCALE)**2
   for ind, val in enumerate(output):
-    # output[ind] = val // norm_scale
+    output[ind] = val // norm_scale
     pass
     # print(f'{val/max_scale}', end=' ')
 
