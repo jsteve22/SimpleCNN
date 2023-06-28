@@ -74,42 +74,61 @@ def custom_test(model_name, Xtest, Ytest):
 
   output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel, enc_scheme )
   output = np.array(output)
-  output = ReLU(output)
+  filters, width, height = output.shape
+  # output = ReLU(output)
   output = scale_down(output, 2**P_2_SCALE)
+  print(output.reshape(filters*width*height)[:150])
+  print('-'*30)
 
   output = conv_layer_prediction.pad_images( output )
   output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_1.kernel.txt"), enc_scheme )
   output = np.array(output)
-  output = ReLU(output)
+  filters, width, height = output.shape
+  # output = ReLU(output)
   output = scale_down(output, 2**P_2_SCALE)
+  print(output.reshape(filters*width*height)[:150])
+  print('-'*30)
 
   output = conv_layer_prediction.pad_images( output )
   output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_2.kernel.txt"), enc_scheme )
   output = np.array(output)
-  output = ReLU(output)
+  filters, width, height = output.shape
+  # output = ReLU(output)
   output = scale_down(output, 2**P_2_SCALE)
+  print(output.reshape(filters*width*height)[:150])
+  print('-'*30)
 
   output = conv_layer_prediction.pad_images( output )
   output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_3.kernel.txt"), enc_scheme )
   output = np.array(output)
   output = ReLU(output)
+  filters, width, height = output.shape
   output = scale_down(output, 2**P_2_SCALE)
+  print(output.reshape(filters*width*height)[:150])
+  print('-'*30)
 
   filters, width, height = output.shape
   output = output.reshape(width*height*filters)
 
+  putput = [ o % 2**32 for o in output ]
+  putput = [ o if o < 2**31 else 0 for o in putput ]
+  print(putput[:75])
   dense_kernel = read_weights(f"{directory}/dense.kernel.txt")
   # dense_bias = read_weights(f"{directory}/dense.bias.txt")
 
   output = dense_layer_prediction.dense_layer( output, dense_kernel)
   # output = dense_layer_poly_mult.dense_layer( enc_scheme, output, dense_kernel, dense_bias )
+  putput = [ o % 2**32 for o in output ]
+  putput = [ o if o < 2**31 else 0 for o in putput ]
+  print(putput[:75])
+  return
 
   # PLAINTEXT_MODULUS = 2061584302081
   # output = [o % (2**32) for o in output]
   # output = [o - (2**32) if o > (2**31) else o for o in output]
 
   max_scale = max(output)
-  norm_scale = (2**P_2_SCALE)**2
+  norm_scale = (2**P_2_SCALE)**6
   for ind, val in enumerate(output):
     output[ind] = val // norm_scale
     pass
@@ -145,7 +164,7 @@ def tf_test(model_name, Xtest, Ytest):
   return Ypred[0]
 
 def test_many_mnist_examples():
-  num_tests = 1000
+  num_tests = 20
   same_pred = 0
   total_diff = 0
   diff_arr = []
@@ -153,7 +172,7 @@ def test_many_mnist_examples():
     save_mnist_test.main(i)
     print(f'Test {i+1}')
     print('---'*8)
-    model_name = 'simple_model'
+    model_name = '4_layer_mnist_model'
     single_test = load_pickle('single_test.pkl')
     Xtest = single_test[0]
     Ytest = single_test[1]

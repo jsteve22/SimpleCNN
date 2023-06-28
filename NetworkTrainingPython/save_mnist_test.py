@@ -58,4 +58,4 @@ def main(test_num=None):
     f.write('\n')
 
 if __name__ == '__main__':
-  main(15)
+  main()
