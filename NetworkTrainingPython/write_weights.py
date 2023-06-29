@@ -80,6 +80,6 @@ def read_weights(file_name):
 
 if __name__ == '__main__':
     write_weights("miniONN_cifar_model", (32, 32, 3, 1))
-    # write_weights("4_layer_mnist_model", (28, 28, 4, 1))
+    # write_weights("mnist_email_model", (28, 28, 1, 1))
     # write_weights("simple_model", (28, 28, 4, 1))
     #read_weights("dense.kernel.txt")
