@@ -20,7 +20,9 @@ def main():
   Xtest = single_test[0]
   Ytest = single_test[1]
   tf_test(model_name, Xtest, Ytest)
-  custom_test(model_name, Xtest, Ytest)
+  # custom_test(model_name, Xtest, Ytest)
+  custom_model = custom_load_miniONN()
+  custom_predict(custom_model, Xtest)
   return
 
 P_2_SCALE = 8
@@ -62,6 +64,88 @@ def wrapper_conv_layer(input_layer, layer_path, padded=False, enc_scheme=None):
   print(f'{layer_name} Done')
   return output
 
+def custom_load_miniONN():
+  model_name = 'miniONN_cifar_model'
+  directory = f'./model_weights/{model_name}'
+
+  model_layers = []
+
+  def conv_func(input_layer, **kwargs):
+    weights = kwargs['weights']
+    padded = False if 'padded' not in kwargs else kwargs['padded']
+    name = '' if 'name' not in kwargs else kwargs['name']
+
+    layer = input_layer.copy()
+    if (padded == True):
+      layer = conv_layer_prediction.pad_images( layer )
+    output = conv_layer_prediction.conv_layer_prediction( layer, weights )
+    output = np.array(output)
+    output = scale_down(output, 2**P_2_SCALE)
+    output = ReLU(output)
+    print(f'{name} Done')
+    return output
+  
+  def mean_func(input_layer, **kwargs):
+    return mean_pooling_layer_prediction.mean_pooling_layer( input_layer )
+
+  def dense_func(input_layer, **kwargs):
+    weights = kwargs['weights']
+    name = '' if 'name' not in kwargs else kwargs['name']
+
+    output = dense_layer_prediction.dense_layer( input_layer, weights )
+    for ind, val in enumerate(output):
+      output[ind] = val // (2**P_2_SCALE)
+    print(f'{name} Done')
+    return output
+
+  def reshape_func(input_layer, **kwargs):
+    filters, width, height = input_layer.shape
+    output = input_layer.reshape(width*height*filters)
+    return output
+  
+  def softmax_func(input_layer, **kwargs):
+    output = input_layer.copy()
+    for ind, val in enumerate(output):
+      output[ind] = val // (2**P_2_SCALE)
+    output = dense_layer_prediction.softmax( output )
+    return output
+  
+  model_layers.append({'func': conv_func, 'weights':read_weights(f'{directory}/conv2d.kernel.txt'), 'padded':True, 'name':'conv2d'})
+  model_layers.append({'func': conv_func, 'weights':read_weights(f'{directory}/conv2d_1.kernel.txt'), 'padded':True, 'name':'conv2d_1'})
+  model_layers.append({'func': mean_func})
+  model_layers.append({'func': conv_func, 'weights':read_weights(f'{directory}/conv2d_2.kernel.txt'), 'padded':True, 'name':'conv2d_2'})
+  model_layers.append({'func': conv_func, 'weights':read_weights(f'{directory}/conv2d_3.kernel.txt'), 'padded':True, 'name':'conv2d_3'})
+  model_layers.append({'func': mean_func})
+  model_layers.append({'func': conv_func, 'weights':read_weights(f'{directory}/conv2d_4.kernel.txt'), 'padded':True, 'name':'conv2d_4'})
+  model_layers.append({'func': conv_func, 'weights':read_weights(f'{directory}/conv2d_5.kernel.txt'), 'name':'conv2d_5'})
+  model_layers.append({'func': conv_func, 'weights':read_weights(f'{directory}/conv2d_6.kernel.txt'), 'name':'conv2d_6'})
+  model_layers.append({'func': reshape_func})
+  model_layers.append({'func': dense_func, 'weights':read_weights(f'{directory}/dense.kernel.txt'), 'name':'dense'})
+  model_layers.append({'func': softmax_func})
+  return model_layers
+
+def custom_predict(custom_layers, Xtest):
+  Xtest = scale_to_int(Xtest)
+  image_height, image_width, image_channels = Xtest.shape
+  images = np.zeros( (image_channels, image_height, image_width), dtype=int )
+  # images = np.zeros( (image_channels, image_height, image_width))
+  for wi, w in enumerate(Xtest):
+    for hi, h in enumerate(w):
+      for ci, c in enumerate(h):
+        images[ci][wi][hi] = c
+  output = images
+
+  for layer in custom_layers:
+    func = list(layer.values())[0]
+    output = func(output, **layer)
+
+  print(f'Prediction: [', end=' ')
+  for pred in output:
+    pred = float(pred)
+    print(f'{pred:.7f}', end=' ')
+  print(']')
+  return output
+
 def custom_test(model_name, Xtest, Ytest):
 
   # Load and reshape the test image
@@ -77,10 +161,6 @@ def custom_test(model_name, Xtest, Ytest):
 
   directory = f'./model_weights/{model_name}'
 
-  # load in the weights for the conv2d layer
-  # conv2d_kernel = read_weights(f"{directory}/conv2d.kernel.txt")
-  # conv2d_bias = read_weights(f"{directory}/conv2d.bias.txt")
-
   enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
 
   output = wrapper_conv_layer( Xtest, f'{directory}/conv2d.kernel.txt', padded=True, enc_scheme=enc_scheme )
@@ -92,49 +172,13 @@ def custom_test(model_name, Xtest, Ytest):
   output = wrapper_conv_layer( output, f'{directory}/conv2d_4.kernel.txt', padded=True, enc_scheme=enc_scheme )
   output = wrapper_conv_layer( output, f'{directory}/conv2d_5.kernel.txt', enc_scheme=enc_scheme )
   output = wrapper_conv_layer( output, f'{directory}/conv2d_6.kernel.txt', enc_scheme=enc_scheme )
-  '''
-  Xtest = conv_layer_prediction.pad_images( Xtest )
-  output = conv_layer_prediction.conv_layer_prediction( Xtest, conv2d_kernel, enc_scheme )
-  output = np.array(output)
-  output = ReLU(output)
-  output = scale_down(output, 2**P_2_SCALE)
-
-  output = conv_layer_prediction.pad_images( output )
-  output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_1.kernel.txt"), enc_scheme )
-  output = np.array(output)
-  output = ReLU(output)
-  output = scale_down(output, 2**P_2_SCALE)
-
-  output = conv_layer_prediction.pad_images( output )
-  output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_2.kernel.txt"), enc_scheme )
-  output = np.array(output)
-  output = ReLU(output)
-  output = scale_down(output, 2**P_2_SCALE)
-
-  output = conv_layer_prediction.pad_images( output )
-  output = conv_layer_prediction.conv_layer_prediction( output, read_weights(f"{directory}/conv2d_3.kernel.txt"), enc_scheme )
-  output = np.array(output)
-  output = ReLU(output)
-  output = scale_down(output, 2**P_2_SCALE)
-  '''
 
   filters, width, height = output.shape
   output = output.reshape(width*height*filters)
 
-  # putput = [ o % 2**32 for o in output ]
-  # putput = [ o if o < 2**31 else 0 for o in putput ]
-  # print(putput[:75])
   dense_kernel = read_weights(f"{directory}/dense.kernel.txt")
-  # dense_bias = read_weights(f"{directory}/dense.bias.txt")
 
   output = dense_layer_prediction.dense_layer( output, dense_kernel)
-  # output = dense_layer_poly_mult.dense_layer( enc_scheme, output, dense_kernel, dense_bias )
-  # putput = [ o % 2**32 for o in output ]
-  # putput = [ o if o < 2**31 else 0 for o in putput ]
-
-  # PLAINTEXT_MODULUS = 2061584302081
-  # output = [o % (2**32) for o in output]
-  # output = [o - (2**32) if o > (2**31) else o for o in output]
 
   max_scale = max(output)
   norm_scale = (2**P_2_SCALE)**2
