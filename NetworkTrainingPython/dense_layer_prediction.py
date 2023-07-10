@@ -48,6 +48,19 @@ def dense_layer(input_layer, kernel, bias=None):
 
   return output_layer
 
+def split_dense_layer(input_layer, kernel, bias=None):
+  output_count, length = kernel.shape
+
+  bias = bias if bias is not None else [0]*output_count
+
+  output_layer = [0]*output_count
+  for ind in range(output_count):
+    dot_sum = dot_product(input_layer, kernel[ind])
+    output_layer[ind] += dot_sum
+    output_layer[ind] += bias[ind]
+
+  return output_layer
+
 
 def wrapper_dense_layer(input_layer, layer_name, weights_dictionary, input_shape):
   dense_kernel = weights_dictionary[f'{layer_name}.kernel'].numpy()

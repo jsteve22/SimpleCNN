@@ -9,6 +9,7 @@ from write_weights import write_weights, read_weights
 # from custom_bfv.bfv import BFV
 from custom_bfv.bfv_ntt import BFV
 import save_mnist_test
+from print_outputs import print_1D_output, print_3D_output
 
 def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
@@ -39,6 +40,7 @@ def ReLU(arr):
       for k, val in enumerate(row):
         if val < 0:
           ret[i][j][k] = 0
+  ret = scale_down(ret, 2**P_2_SCALE)
   return ret
 
 def scale_down(arr, scale):
@@ -56,30 +58,9 @@ def wrapper_conv_layer(input_layer, layer_path, padded=False, enc_scheme=None):
     layer = conv_layer_prediction.pad_images( layer )
   output = conv_layer_prediction.conv_layer_prediction( layer, read_weights(layer_path), enc_scheme )
   output = np.array(output)
-  output = scale_down(output, 2**P_2_SCALE)
-  output = ReLU(output)
+  # output = scale_down(output, 2**P_2_SCALE)
   layer_name = layer_path.split('/')[-1].split('.')[0]
   print(f'{layer_name} Done')
-  return output
-
-def many_conv_layer(input_layers, layer_paths, padded=False, enc_scheme=None):
-  results = []
-  for input_layer, layer_path in zip(input_layers, layer_paths):
-    layer = input_layer.copy()
-    if (padded == True):
-      layer = conv_layer_prediction.pad_images( layer )
-    output = conv_layer_prediction.conv_layer_prediction( layer, read_weights(layer_path), enc_scheme )
-    output = np.array(output)
-    # output = scale_down(output, 2**P_2_SCALE)
-    results.append( output )
-    layer_name = layer_path.split('/')[-1].split('.')[0]
-    print(f'{layer_name} Done')
-  # accumulate all the matrix multiplications together
-  output_sum = np.zeros( (results[0].shape) )
-  for output in results:
-    output_sum += output
-  output_sum = scale_down(output_sum, 2**P_2_SCALE)
-  output = ReLU(output_sum)
   return output
 
 def custom_test(model_name, Xtest, Ytest):
@@ -95,55 +76,66 @@ def custom_test(model_name, Xtest, Ytest):
         images[ci][wi][hi] = c
   Xtest = images
 
-  directory = f'./model_weights/test_{model_name}'
+  directory = f'./model_weights/{model_name}'
 
   enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
 
   OUTPUT_PRINT = lambda output: print(output.reshape( np.prod(output.shape) ).astype(int)[:100])
 
-  '''
   output = wrapper_conv_layer( Xtest, f'{directory}/conv2d.kernel.txt', padded=True, enc_scheme=enc_scheme )
+  print_3D_output('./output_files/1_conv_output.txt', output)
+  output = ReLU(output)
+  print_1D_output('./output_files/2_relu_output.txt', output)
   output = wrapper_conv_layer( output, f'{directory}/conv2d_1.kernel.txt', padded=True, enc_scheme=enc_scheme )
+  print_3D_output('./output_files/3_conv_output.txt', output)
+  output = ReLU(output)
+  print_1D_output('./output_files/4_relu_output.txt', output)
   output = mean_pooling_layer_prediction.mean_pooling_layer( output )
+  print_3D_output('./output_files/5_meanpool_output.txt', output)
   output = wrapper_conv_layer( output, f'{directory}/conv2d_2.kernel.txt', padded=True, enc_scheme=enc_scheme )
+  print_3D_output('./output_files/6_conv_output.txt', output)
+  output = ReLU(output)
+  print_1D_output('./output_files/7_relu_output.txt', output)
   output = wrapper_conv_layer( output, f'{directory}/conv2d_3.kernel.txt', padded=True, enc_scheme=enc_scheme )
+  print_3D_output('./output_files/8_conv_output.txt', output)
+  output = ReLU(output)
+  print_1D_output('./output_files/9_relu_output.txt', output)
   output = mean_pooling_layer_prediction.mean_pooling_layer( output )
+  print_3D_output('./output_files/10_meanpool_output.txt', output)
   output = wrapper_conv_layer( output, f'{directory}/conv2d_4.kernel.txt', padded=True, enc_scheme=enc_scheme )
+  print_3D_output('./output_files/11_conv_output.txt', output)
+  output = ReLU(output)
+  print_1D_output('./output_files/12_relu_output.txt', output)
   output = wrapper_conv_layer( output, f'{directory}/conv2d_5.kernel.txt', enc_scheme=enc_scheme )
+  print_3D_output('./output_files/13_conv_output.txt', output)
+  output = ReLU(output)
+  print_1D_output('./output_files/14_relu_output.txt', output)
   output = wrapper_conv_layer( output, f'{directory}/conv2d_6.kernel.txt', enc_scheme=enc_scheme )
-  OUTPUT_PRINT(output)
-  return
-  '''
-
-  output = wrapper_conv_layer( Xtest, f'{directory}/conv2d.kernel.txt', padded=True, enc_scheme=enc_scheme )
-  output0 = output[:32]
-  output1 = output[32:]
-  output  = many_conv_layer( [output0, output1], [f'{directory}/conv2d_1.kernel.txt', f'{directory}/conv2d_1.0.kernel.txt' ], padded=True, enc_scheme=enc_scheme )
-  output  = mean_pooling_layer_prediction.mean_pooling_layer( output )
-  output0 = output[:32]
-  output1 = output[32:]
-  output  = many_conv_layer( [output0, output1], [f'{directory}/conv2d_2.kernel.txt', f'{directory}/conv2d_2.0.kernel.txt'], padded=True, enc_scheme=enc_scheme )
-  output0 = output[:32]
-  output1 = output[32:]
-  output  = many_conv_layer( [output0, output1], [f'{directory}/conv2d_3.kernel.txt', f'{directory}/conv2d_3.0.kernel.txt'], padded=True, enc_scheme=enc_scheme )
-  output  = mean_pooling_layer_prediction.mean_pooling_layer( output )
-  output0 = output[:32]
-  output1 = output[32:]
-  output  = many_conv_layer( [output0, output1], [f'{directory}/conv2d_4.kernel.txt', f'{directory}/conv2d_4.0.kernel.txt'], padded=True, enc_scheme=enc_scheme )
-  output0 = output[:32]
-  output1 = output[32:]
-  output  = many_conv_layer( [output0, output1], [f'{directory}/conv2d_5.kernel.txt', f'{directory}/conv2d_5.0.kernel.txt'], enc_scheme=enc_scheme )
-  output0 = output[:32]
-  output1 = output[32:]
-  output  = many_conv_layer( [output0, output1], [f'{directory}/conv2d_6.kernel.txt', f'{directory}/conv2d_6.0.kernel.txt'], enc_scheme=enc_scheme )
-  OUTPUT_PRINT(output)
+  print_3D_output('./output_files/15_conv_output.txt', output)
+  output = ReLU(output)
+  print_1D_output('./output_files/16_relu_output.txt', output)
 
   filters, width, height = output.shape
   output = output.reshape(width*height*filters)
 
   dense_kernel = read_weights(f"{directory}/dense.kernel.txt")
+  # output = dense_layer_prediction.dense_layer( output, dense_kernel)
+  dense_output = [0] * 10
 
-  output = dense_layer_prediction.dense_layer( output, dense_kernel)
+  split = 4000
+  for i in range(0, width*height*filters, split):
+    temp = dense_layer_prediction.dense_layer( output[i:min(i+split, width*height*filters - i)], dense_kernel[:][i:min(i+split, width*height*filters - i)])
+    for j in range(len(temp)):
+      dense_output[j] += temp[j]
+
+  output = dense_output
+
+  print(f'Prediction: [', end=' ')
+  for pred in output:
+    pred = float(pred)
+    print(f'{pred:.7f}', end=' ')
+  print(']')
+  return output
 
   max_scale = max(output)
   norm_scale = (2**P_2_SCALE)**2
