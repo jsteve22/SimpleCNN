@@ -6,7 +6,7 @@ import os
 
 def write_weights(model_name, image_shape, write_ints=True):
     model = tf.keras.models.load_model(f'models/{model_name}.h5')
-    model_name = 'test_' + model_name
+    model_name = model_name
 
     try:
         os.mkdir(f'./model_weights/{model_name}')
@@ -59,7 +59,7 @@ def write_conv_kernel(filepointer, numpy_layer, name, model_name, write_ints=Tru
     numpy_layer = kernel
     # write the dimensions of the shape
     new_name = '0.'.join( name.split('.') )
-    if channels > limit:
+    if channels > limit and False:
         filepointer.close()
         many_conv_kernel(numpy_layer, name, model_name, write_ints, limit)
         return
