@@ -181,7 +181,7 @@ def custom_test(model_name, Xtest):
     # layer 4.1
     output = basic_block(output, "4.1")
     # adaptive avg pooling ?
-    output = mean_pooling_layer_prediction.mean_pooling_layer(output)
+    output = mean_pooling_layer_prediction.adaptive_mean_pooling_layer(output, output_shape=(1, 1))
 
     filters, width, height = output.shape
     output = output.reshape(width*height*filters)
@@ -227,6 +227,7 @@ def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
   # model = tf.keras.models.load_model(f'./models/{model_name}.h5')
   model = torchvision.models.resnet18()
+  model.load_state_dict(torch.load('./models/resnet18.pth'))
 
   Xtest = np.expand_dims(Xtest, 0)
   Xtest = torch.Tensor(Xtest)
