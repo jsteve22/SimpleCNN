@@ -42,7 +42,8 @@ def write_weights(model, model_name, write_ints=True):
         fp.close()
 
 def write_conv_kernel(filepointer, numpy_layer, name, model_name, write_ints=True, limit=32):
-    width, height, channels, filters = numpy_layer.shape
+    print(numpy_layer.shape)
+    filters, channels, width, height = numpy_layer.shape
 
     filepointer.write(f"{filters} {channels} {height} {width} \n")
     total_sz = filters * channels * height * width

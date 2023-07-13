@@ -31,7 +31,7 @@ def compare_output(gazelle_file, python_file):
         print(f"number of different values: {num_different}, number compared: {len(g_nums)}")
         print(f"percent different: {percent_different}")
         print(f"total amount off: {total_difference}")
-        print(f"standard deviation: {np.std(differences)}")
+        print(f"standard deviation: { np.std(differences) if (len(differences) > 0) else 'None'}")
         
 
 def accuracy_test():

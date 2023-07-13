@@ -5,23 +5,34 @@ import conv_layer_prediction
 import dense_layer_prediction
 import dense_layer_poly_mult
 import mean_pooling_layer_prediction
+import max_pooling_layer
+import batch_norm
 from write_weights import write_weights, read_weights
 # from custom_bfv.bfv import BFV
 from custom_bfv.bfv_ntt import BFV
 import save_mnist_test
 from print_outputs import print_1D_output, print_3D_output
+import torch
+import torchvision
 
 def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
     return pkl.load(f)
 
 def main():
-  model_name = 'miniONN_cifar_model'
-  single_test = load_pickle('cifar_test.pkl')
-  Xtest = single_test[0]
-  Ytest = single_test[1]
+  # model_name = 'miniONN_cifar_model'
+  model_name = 'resnet18'
+  # single_test = load_pickle('cifar_test.pkl')
+  # Xtest = single_test[0]
+  # Ytest = single_test[1]
+  Xtest = [[[1]*64] * 64]*3
+  Xtest = np.array(Xtest)
+  Ytest = [[[1]*64] * 64]
+  Ytest = np.array(Ytest)
+  Ytest = np.reshape(Ytest, (64, 64, 1))
   tf_test(model_name, Xtest, Ytest)
-  custom_test(model_name, Xtest, Ytest)
+  Xtest = np.reshape(Xtest, (64, 64, 3))
+  custom_test(model_name, Xtest)
   return
 
 P_2_SCALE = 8
@@ -52,18 +63,18 @@ def scale_down(arr, scale):
         ret[i][j][k] = val // scale
   return ret
 
-def wrapper_conv_layer(input_layer, layer_path, padded=False, enc_scheme=None):
+def wrapper_conv_layer(input_layer, layer_path, pad=0, enc_scheme=None, stride=1):
   layer = input_layer.copy()
-  if (padded == True):
-    layer = conv_layer_prediction.pad_images( layer )
-  output = conv_layer_prediction.conv_layer_prediction( layer, read_weights(layer_path), enc_scheme )
+  if pad:
+    layer = conv_layer_prediction.pad_images( layer, pad )
+  output = conv_layer_prediction.conv_layer_prediction( layer, read_weights(layer_path), stride, enc_scheme )
   output = np.array(output)
   # output = scale_down(output, 2**P_2_SCALE)
   layer_name = layer_path.split('/')[-1].split('.')[0]
   print(f'{layer_name} Done')
   return output
 
-def custom_test(model_name, Xtest, Ytest):
+def custom_test(model_name, Xtest):
 
   # Load and reshape the test image
   Xtest = scale_to_int(Xtest)
@@ -81,54 +92,115 @@ def custom_test(model_name, Xtest, Ytest):
   enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
 
   OUTPUT_PRINT = lambda output: print(output.reshape( np.prod(output.shape) ).astype(int)[:100])
+  
+  if model_name == "miniONN_cifar_model":
+    output = wrapper_conv_layer( Xtest, f'{directory}/conv2d.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    print_3D_output('./output_files/1_conv_output.txt', output)
+    output = ReLU(output)
+    print_1D_output('./output_files/2_relu_output.txt', output)
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_1.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    print_3D_output('./output_files/3_conv_output.txt', output)
+    output = ReLU(output)
+    print_1D_output('./output_files/4_relu_output.txt', output)
+    output = mean_pooling_layer_prediction.mean_pooling_layer( output )
+    print_3D_output('./output_files/5_meanpool_output.txt', output)
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_2.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    print_3D_output('./output_files/6_conv_output.txt', output)
+    output = ReLU(output)
+    print_1D_output('./output_files/7_relu_output.txt', output)
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_3.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    print_3D_output('./output_files/8_conv_output.txt', output)
+    output = ReLU(output)
+    print_1D_output('./output_files/9_relu_output.txt', output)
+    output = mean_pooling_layer_prediction.mean_pooling_layer( output )
+    print_3D_output('./output_files/10_meanpool_output.txt', output)
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_4.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    print_3D_output('./output_files/11_conv_output.txt', output)
+    output = ReLU(output)
+    print_1D_output('./output_files/12_relu_output.txt', output)
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_5.kernel.txt', enc_scheme=enc_scheme )
+    print_3D_output('./output_files/13_conv_output.txt', output)
+    output = ReLU(output)
+    print_1D_output('./output_files/14_relu_output.txt', output)
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_6.kernel.txt', enc_scheme=enc_scheme )
+    print_3D_output('./output_files/15_conv_output.txt', output)
+    output = ReLU(output)
+    print_1D_output('./output_files/16_relu_output.txt', output)
 
-  output = wrapper_conv_layer( Xtest, f'{directory}/conv2d.kernel.txt', padded=True, enc_scheme=enc_scheme )
-  print_3D_output('./output_files/1_conv_output.txt', output)
-  output = ReLU(output)
-  print_1D_output('./output_files/2_relu_output.txt', output)
-  output = wrapper_conv_layer( output, f'{directory}/conv2d_1.kernel.txt', padded=True, enc_scheme=enc_scheme )
-  print_3D_output('./output_files/3_conv_output.txt', output)
-  output = ReLU(output)
-  print_1D_output('./output_files/4_relu_output.txt', output)
-  output = mean_pooling_layer_prediction.mean_pooling_layer( output )
-  print_3D_output('./output_files/5_meanpool_output.txt', output)
-  output = wrapper_conv_layer( output, f'{directory}/conv2d_2.kernel.txt', padded=True, enc_scheme=enc_scheme )
-  print_3D_output('./output_files/6_conv_output.txt', output)
-  output = ReLU(output)
-  print_1D_output('./output_files/7_relu_output.txt', output)
-  output = wrapper_conv_layer( output, f'{directory}/conv2d_3.kernel.txt', padded=True, enc_scheme=enc_scheme )
-  print_3D_output('./output_files/8_conv_output.txt', output)
-  output = ReLU(output)
-  print_1D_output('./output_files/9_relu_output.txt', output)
-  output = mean_pooling_layer_prediction.mean_pooling_layer( output )
-  print_3D_output('./output_files/10_meanpool_output.txt', output)
-  output = wrapper_conv_layer( output, f'{directory}/conv2d_4.kernel.txt', padded=True, enc_scheme=enc_scheme )
-  print_3D_output('./output_files/11_conv_output.txt', output)
-  output = ReLU(output)
-  print_1D_output('./output_files/12_relu_output.txt', output)
-  output = wrapper_conv_layer( output, f'{directory}/conv2d_5.kernel.txt', enc_scheme=enc_scheme )
-  print_3D_output('./output_files/13_conv_output.txt', output)
-  output = ReLU(output)
-  print_1D_output('./output_files/14_relu_output.txt', output)
-  output = wrapper_conv_layer( output, f'{directory}/conv2d_6.kernel.txt', enc_scheme=enc_scheme )
-  print_3D_output('./output_files/15_conv_output.txt', output)
-  output = ReLU(output)
-  print_1D_output('./output_files/16_relu_output.txt', output)
+    filters, width, height = output.shape
+    output = output.reshape(width*height*filters)
 
-  filters, width, height = output.shape
-  output = output.reshape(width*height*filters)
+    dense_kernel = read_weights(f"{directory}/dense.kernel.txt")
+    # output = dense_layer_prediction.dense_layer( output, dense_kernel)
+    dense_output = [0] * 10
 
-  dense_kernel = read_weights(f"{directory}/dense.kernel.txt")
-  # output = dense_layer_prediction.dense_layer( output, dense_kernel)
-  dense_output = [0] * 10
+    split = 4000
+    for i in range(0, width*height*filters, split):
+      temp = dense_layer_prediction.dense_layer( output[i:min(i+split, width*height*filters - i)], dense_kernel[:][i:min(i+split, width*height*filters - i)])
+      for j in range(len(temp)):
+        dense_output[j] += temp[j]
 
-  split = 4000
-  for i in range(0, width*height*filters, split):
-    temp = dense_layer_prediction.dense_layer( output[i:min(i+split, width*height*filters - i)], dense_kernel[:][i:min(i+split, width*height*filters - i)])
-    for j in range(len(temp)):
-      dense_output[j] += temp[j]
+  if model_name == "resnet18":
+    def basic_block(inp, layer, first_stride=1):
+      output = wrapper_conv_layer(inp, f'{directory}/layer{layer}.conv1.weight.txt', pad=1, enc_scheme=enc_scheme, stride=first_stride)
+      output = batch_norm.batch_main(output, f'{directory}/layer{layer}.bn1.weight.txt', f'{directory}/layer{layer}.bn1.bias.txt', f'{directory}/layer{layer}.bn1.running_mean.txt', f'{directory}/layer{layer}.bn1.running_var.txt')
+      output = ReLU(output)
+      output = wrapper_conv_layer(output, f'{directory}/layer{layer}.conv2.weight.txt', pad=1, enc_scheme=enc_scheme, stride=1)
+      output = batch_norm.batch_main(output, f'{directory}/layer{layer}.bn2.weight.txt', f'{directory}/layer{layer}.bn2.bias.txt', f'{directory}/layer{layer}.bn2.running_mean.txt', f'{directory}/layer{layer}.bn2.running_var.txt')
+      return output
+    
+    def downsample(inp, layer):
+      output = wrapper_conv_layer(inp, f'{directory}/layer{layer}.downsample.0.weight.txt', pad=1, enc_scheme=enc_scheme, stride=2)
+      output = batch_norm.batch_main(output, f'{directory}/layer{layer}.downsample.1.weight.txt', f'{directory}/layer{layer}.downsample.1.bias.txt', f'{directory}/layer{layer}.downsample.1.running_mean.txt', f'{directory}/layer{layer}.downsample.1.running_var.txt')
+      return output
 
-  output = dense_output
+    # begin
+    output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
+    output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
+    output = ReLU(output)
+    # pad before max pool
+    output = conv_layer_prediction.pad_images(output, 1)
+    output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
+    # layer 1.0
+    output = basic_block(output, "1.0")
+    # layer 1.1
+    output = basic_block(output, "1.1")
+    # layer 2.0
+    output = basic_block(output, "2.0", first_stride=2)
+    output = downsample(output, "2.0")
+    # layer 2.1
+    output = basic_block(output, "2.0")
+    # layer 3.0
+    output = basic_block(output, "3.0", first_stride=2)
+    output = downsample(output, "3.0")
+    # layer 3.1
+    output = basic_block(output, "3.1")
+    # layer 4.0
+    output = basic_block(output, "4.0", first_stride=2)
+    output = downsample(output, "4.0")
+    # layer 4.1
+    output = basic_block(output, "4.1")
+    # adaptive avg pooling ?
+    output = mean_pooling_layer_prediction.mean_pooling_layer(output)
+
+    filters, width, height = output.shape
+    output = output.reshape(width*height*filters)
+
+    dense_kernel = read_weights(f"{directory}/fc.weight.txt")
+    dense_bias = read_weights(f"{directory}/fc.bias.txt")
+    # output = dense_layer_prediction.dense_layer( output, dense_kernel)
+    dense_output = [0] * 1000
+
+    split = 4000
+    for i in range(0, width*height*filters, split):
+      temp = dense_layer_prediction.dense_layer( output[i:min(i+split, width*height*filters - i)], dense_kernel[:][i:min(i+split, width*height*filters - i)])
+      for j in range(len(temp)):
+        dense_output[j] += temp[j]
+
+    for i in range(len(dense_output)):
+      dense_output[i] += dense_bias[i]
+    
+    output = dense_output
 
   print(f'Prediction: [', end=' ')
   for pred in output:
@@ -153,15 +225,21 @@ def custom_test(model_name, Xtest, Ytest):
 
 def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
-  model = tf.keras.models.load_model(f'./models/{model_name}.h5')
+  # model = tf.keras.models.load_model(f'./models/{model_name}.h5')
+  model = torchvision.models.resnet18()
 
   Xtest = np.expand_dims(Xtest, 0)
+  Xtest = torch.Tensor(Xtest)
+  print(Xtest.size())
   # print(f'Xtest: {Xtest}')
   # print(f'Xtest shape: {Xtest.shape}')
   # print(f'Ytest: {Ytest}')
   # print(f'Ytest shape: {Ytest.shape}')
 
-  Ypred = model.predict( Xtest )
+  # Ypred = model.predict( Xtest )
+  model.eval()
+  with torch.no_grad():
+    Ypred = model(Xtest)
 
   print(f'Prediction: [', end=' ')
   for pred in Ypred[0]:

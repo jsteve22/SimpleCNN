@@ -8,6 +8,7 @@ def main(test_num=None):
 
   # Load the data and split it between train and test sets
   (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
+  
 
   # Scale images to the [0, 1] range
   x_train = x_train.astype('float32') / 255
