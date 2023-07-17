@@ -11,7 +11,7 @@ def mean_pooling(input_layer, shape=(2,2)):
       total = 0
       for fi in range(fw):
         for fj in range(fh):
-          total += input_layer[ind*fw + fi][jnd*fh + fj]
+          total += input_layer[ind + fi][jnd + fj]
       output[ind][jnd] = total // (fw*fh)
   return output
 
@@ -25,7 +25,7 @@ def mean_pooling_layer(inputs, shape=(2,2)):
 def adaptive_mean_pooling(input_layer, output_shape=(2,2)):
   width, height = input_layer.shape
   shape = (width // output_shape[0], height // output_shape[1])
-  output = np.zeros( output_shape, dtype=int )
+  output = np.zeros( output_shape )
   fw, fh = shape
 
   for ind, row in enumerate(output):
@@ -33,7 +33,7 @@ def adaptive_mean_pooling(input_layer, output_shape=(2,2)):
       total = 0
       for fi in range(fw):
         for fj in range(fh):
-          total += input_layer[ind*fw + fi][jnd*fh + fj]
+          total += input_layer[ind + fi][jnd + fj]
       output[ind][jnd] = total // (fw*fh)
   return output
 

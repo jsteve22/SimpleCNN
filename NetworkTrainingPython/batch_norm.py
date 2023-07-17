@@ -31,16 +31,16 @@ def mini_batch(vectors, beta, gamma, ma_mean, ma_var, alpha):
     for vec in norm_vectors:
         output.append(gamma*vec + beta)
     
-def batch_normalize(vectors, ma_mean, ma_var):
+def batch_normalize(vectors, ma_mean, ma_var, e):
     normalized = vectors
     for i, vec in enumerate(vectors):
         for j, x in enumerate(vec):
             for k, y in enumerate(x):
-                normalized[i][j][k] = (y - ma_mean[i]) / ma_var[i]
+                normalized[i][j][k] = (y - ma_mean[i]) / np.sqrt(ma_var[i] + e)
     return normalized
 
-def batch_inference(vectors, gamma, beta, ma_mean, ma_var):
-    normalized = batch_normalize(vectors, ma_mean, ma_var)
+def batch_inference(vectors, gamma, beta, ma_mean, ma_var, e):
+    normalized = batch_normalize(vectors, ma_mean, ma_var, e)
     batch_output = np.zeros(vectors.shape)
     for i, vec in enumerate(normalized):
         for j, x in enumerate(vec):
@@ -55,7 +55,7 @@ def read_batch_weights(weight_file, bias_file, mean_file, var_file):
     ma_var = read_weights(var_file)
     return gamma, beta, ma_mean, ma_var
 
-def batch_main(batch_input, weight_file="bn1.weight.txt", bias_file="bn1.bias.txt", mean_file="bn1.running_mean.txt", var_file="bn1.running_var.txt"):
+def batch_main(batch_input, weight_file="bn1.weight.txt", bias_file="bn1.bias.txt", mean_file="bn1.running_mean.txt", var_file="bn1.running_var.txt", e=1**(-5)):
     gamma, beta, ma_mean, ma_var = read_batch_weights(weight_file, bias_file, mean_file, var_file)
-    output = batch_inference(batch_input, gamma, beta, ma_mean, ma_var)
+    output = batch_inference(batch_input, gamma, beta, ma_mean, ma_var, e)
     return output

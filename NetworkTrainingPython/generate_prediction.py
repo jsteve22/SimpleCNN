@@ -51,7 +51,7 @@ def ReLU(arr):
       for k, val in enumerate(row):
         if val < 0:
           ret[i][j][k] = 0
-  ret = scale_down(ret, 2**P_2_SCALE)
+  # ret = scale_down(ret, 2**P_2_SCALE)
   return ret
 
 def scale_down(arr, scale):
@@ -77,10 +77,10 @@ def wrapper_conv_layer(input_layer, layer_path, pad=0, enc_scheme=None, stride=1
 def custom_test(model_name, Xtest):
 
   # Load and reshape the test image
-  Xtest = scale_to_int(Xtest)
+  # Xtest = scale_to_int(Xtest)
   image_height, image_width, image_channels = Xtest.shape
-  images = np.zeros( (image_channels, image_height, image_width), dtype=int )
-  # images = np.zeros( (image_channels, image_height, image_width))
+  # images = np.zeros( (image_channels, image_height, image_width), dtype=int )
+  images = np.zeros( (image_channels, image_height, image_width))
   for wi, w in enumerate(Xtest):
     for hi, h in enumerate(w):
       for ci, c in enumerate(h):
@@ -155,16 +155,21 @@ def custom_test(model_name, Xtest):
       return output
 
     # begin
-    output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
-    output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
-    output = ReLU(output)
+    #output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
+    # print(output.shape)
+    #output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
+    #output = ReLU(output)
     # pad before max pool
-    output = conv_layer_prediction.pad_images(output, 1)
-    output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
+    #output = conv_layer_prediction.pad_images(output, 1)
+    #output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
     # layer 1.0
-    output = basic_block(output, "1.0")
+    test = [[[1]*16]*16]*64
+    test = np.array(test)
+    output = basic_block(test, "1.0")
     # layer 1.1
     output = basic_block(output, "1.1")
+    print(output)
+    return
     # layer 2.0
     output = basic_block(output, "2.0", first_stride=2)
     output = downsample(output, "2.0")
@@ -229,9 +234,11 @@ def tf_test(model_name, Xtest, Ytest):
   model = torchvision.models.resnet18()
   model.load_state_dict(torch.load('./models/resnet18.pth'))
 
+
+  print(Xtest.shape)
+
   Xtest = np.expand_dims(Xtest, 0)
   Xtest = torch.Tensor(Xtest)
-  print(Xtest.size())
   # print(f'Xtest: {Xtest}')
   # print(f'Xtest shape: {Xtest.shape}')
   # print(f'Ytest: {Ytest}')
@@ -239,15 +246,28 @@ def tf_test(model_name, Xtest, Ytest):
 
   # Ypred = model.predict( Xtest )
   model.eval()
+  temp = model.conv1(Xtest)
+  temp = model.bn1(temp)
+  temp = model.relu(temp)
+  temp = model.maxpool(temp)
+  print(temp.shape)
+
+  test = [[[[1]*16]*16]*64]
+  test = torch.Tensor(test)
+  output = model.layer1(test)
+  #conv_output_image = Ypred.permute(0, 2, 3, 1).detach().numpy()
+  # print(conv_output_image)
+  print(output)
+  return
+
   with torch.no_grad():
     Ypred = model(Xtest)
-
   print(f'Prediction: [', end=' ')
   for pred in Ypred[0]:
     pred = float(pred)
     print(f'{pred:.7f}', end=' ')
   print(']')
-  print(f'Acutal: {Ytest}')
+  # print(f'Acutal: {Ytest}')
   return Ypred[0]
 
 def test_many_mnist_examples():

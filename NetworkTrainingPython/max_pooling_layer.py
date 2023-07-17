@@ -3,15 +3,16 @@ import numpy as np
 
 def max_pooling(input_layer, shape=(3,3), stride=1):
   width, height = input_layer.shape
-  output = np.zeros( (width // shape[0], height // shape[1] ), dtype=int )
   fw, fh = shape
+  # output = np.zeros( (width // fw, height // fh ), dtype=int )
+  output = np.zeros( (width // fw, height // fh ) )
 
   for ind in range(0, len(output), stride):
     for jnd in range(0, len(output[ind]), stride):
       vals = []
       for fi in range(fw):
         for fj in range(fh):
-          vals.append(input_layer[ind*fw + fi][jnd*fh + fj])
+          vals.append(input_layer[ind + fi][jnd + fj])
       output[ind][jnd] = max(vals)
   return output
 

@@ -17,12 +17,17 @@ def single_convolution(image, image_height, image_width, kernel, kernel_height, 
     z1_width = (image_width - kernel_width) // stride + 1
     z1 = [ [0]*z1_width for _ in range(z1_height)] # [z1_height][z1_width]
 
-    for i in range(0, z1_height - stride + 1, stride):
-        for j in range(0, z1_width - stride + 1, stride):
+    i = 0
+    j = 0
+    for img_i in range(0, image_height - kernel_height, stride):
+        for img_j in range(0, image_width - kernel_width, stride):
             z1[i][j] = 0
             for k1 in range(kernel_height):
                 for k2 in range(kernel_width):
-                    z1[i][j] += image[i + k1][j + k2] * kernel[k1][k2]        
+                    z1[i][j] += image[img_i + k1][img_j + k2] * kernel[k1][k2]   
+            j += 1 
+        j = 0
+        i += 1  
                     
     return z1
 
