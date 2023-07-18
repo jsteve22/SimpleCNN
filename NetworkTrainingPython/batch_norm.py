@@ -32,20 +32,16 @@ def mini_batch(vectors, beta, gamma, ma_mean, ma_var, alpha):
         output.append(gamma*vec + beta)
     
 def batch_normalize(vectors, ma_mean, ma_var, e):
-    normalized = vectors
+    normalized = np.zeros(vectors.shape)
     for i, vec in enumerate(vectors):
-        for j, x in enumerate(vec):
-            for k, y in enumerate(x):
-                normalized[i][j][k] = (y - ma_mean[i]) / np.sqrt(ma_var[i] + e)
+        normalized[i] = (vec - ma_mean[i]) / np.sqrt(ma_var[i])
     return normalized
 
 def batch_inference(vectors, gamma, beta, ma_mean, ma_var, e):
     normalized = batch_normalize(vectors, ma_mean, ma_var, e)
     batch_output = np.zeros(vectors.shape)
     for i, vec in enumerate(normalized):
-        for j, x in enumerate(vec):
-            for k, y in enumerate(x):
-                batch_output[i][j][k] = (gamma[i]*y + beta[i])
+        batch_output[i] = (gamma[i]*vec + beta[i])
     return batch_output
 
 def read_batch_weights(weight_file, bias_file, mean_file, var_file):

@@ -154,17 +154,17 @@ def custom_test(model_name, Xtest):
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.downsample.1.weight.txt', f'{directory}/layer{layer}.downsample.1.bias.txt', f'{directory}/layer{layer}.downsample.1.running_mean.txt', f'{directory}/layer{layer}.downsample.1.running_var.txt')
       return output
 
+    test = [[[1]*32]*32]*64
+    test = np.array(test) 
     # begin
-    #output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
-    # print(output.shape)
-    #output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
-    #output = ReLU(output)
+    output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
+    #print(output.shape)
+    output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
+    output = ReLU(output)
     # pad before max pool
-    #output = conv_layer_prediction.pad_images(output, 1)
-    #output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
+    output = conv_layer_prediction.pad_images(output, 1)
+    output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
     # layer 1.0
-    test = [[[1]*16]*16]*64
-    test = np.array(test)
     output = basic_block(test, "1.0")
     # layer 1.1
     output = basic_block(output, "1.1")
@@ -228,6 +228,7 @@ def custom_test(model_name, Xtest):
   print(']')
   return output
 
+
 def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
   # model = tf.keras.models.load_model(f'./models/{model_name}.h5')
@@ -250,15 +251,12 @@ def tf_test(model_name, Xtest, Ytest):
   temp = model.bn1(temp)
   temp = model.relu(temp)
   temp = model.maxpool(temp)
-  print(temp.shape)
-
-  test = [[[[1]*16]*16]*64]
-  test = torch.Tensor(test)
-  output = model.layer1(test)
-  #conv_output_image = Ypred.permute(0, 2, 3, 1).detach().numpy()
-  # print(conv_output_image)
+  output = model.layer1(temp)
   print(output)
   return
+  #conv_output_image = Ypred.permute(0, 2, 3, 1).detach().numpy()
+  # print(conv_output_image)
+  # print(output)
 
   with torch.no_grad():
     Ypred = model(Xtest)
