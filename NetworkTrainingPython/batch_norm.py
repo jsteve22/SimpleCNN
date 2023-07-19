@@ -35,6 +35,9 @@ def batch_normalize(vectors, ma_mean, ma_var, e):
     normalized = np.zeros(vectors.shape)
     for i, vec in enumerate(vectors):
         normalized[i] = (vec - ma_mean[i]) / np.sqrt(ma_var[i])
+        # uncomment lines below for integer representation
+        # normalized[i] = (vec - ma_mean[i]) / int(np.sqrt(ma_var[i]))
+        # normalized[i] = normalized[i].astype(int)
     return normalized
 
 def batch_inference(vectors, gamma, beta, ma_mean, ma_var, e):
