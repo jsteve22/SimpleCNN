@@ -143,12 +143,18 @@ def custom_test(model_name, Xtest):
 
   if model_name == "resnet18":
     def basic_block(inp, layer, first_stride=1):
+      t = inp.copy()
       output = wrapper_conv_layer(inp, f'{directory}/layer{layer}.conv1.weight.txt', pad=1, enc_scheme=enc_scheme, stride=first_stride)
+      assert t.all() == inp.all()
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.bn1.weight.txt', f'{directory}/layer{layer}.bn1.bias.txt', f'{directory}/layer{layer}.bn1.running_mean.txt', f'{directory}/layer{layer}.bn1.running_var.txt')
       output = ReLU(output)
       output = wrapper_conv_layer(output, f'{directory}/layer{layer}.conv2.weight.txt', pad=1, enc_scheme=enc_scheme, stride=1)
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.bn2.weight.txt', f'{directory}/layer{layer}.bn2.bias.txt', f'{directory}/layer{layer}.bn2.running_mean.txt', f'{directory}/layer{layer}.bn2.running_var.txt')
-      print(inp.shape, output.shape)
+      # print(inp.shape, output.shape)
+      print(f'inp.shape: {inp.shape}')
+      print(f'output.shape: {output.shape}')
+      print()
+      # output = ReLU(output)
       output = residual(inp, output)
       output = ReLU(output)
       return output
@@ -158,7 +164,7 @@ def custom_test(model_name, Xtest):
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.downsample.1.weight.txt', f'{directory}/layer{layer}.downsample.1.bias.txt', f'{directory}/layer{layer}.downsample.1.running_mean.txt', f'{directory}/layer{layer}.downsample.1.running_var.txt')
       return output
 
-    test = [[[0]*16]*16]*64
+    test = [[[1]*16]*16]*64
     test = np.array(test) 
     # begin
    # output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
@@ -168,12 +174,14 @@ def custom_test(model_name, Xtest):
     # pad before max pool
     #output = conv_layer_prediction.pad_images(output, 1)
     #output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
+
     # layer 1.0
     output = basic_block(test, "1.0")
     #output = ReLU(output)
     # layer 1.1
     output = basic_block(output, "1.1")
-    print(output)
+    print(output.shape)
+    print(output[0])
     return
     # layer 2.0
     output = basic_block(output, "2.0", first_stride=2)
@@ -257,10 +265,15 @@ def tf_test(model_name, Xtest, Ytest):
   #temp = model.relu(temp)
   #temp = model.maxpool(temp)
 
-  test = [[[[0]*16]*16]*64]
+  test = [[[[1]*16]*16]*64]
   test = torch.Tensor(test)
   output = model.layer1(test)
-  print(output)
+  # output = model.layer1[0].conv1(test)
+  # output = model.layer1[0].bn1(output)
+  # output = model.layer1[0].relu(output)
+  # output = model.layer1[0].conv2(output)
+  print(output.shape)
+  print(output[0][0])
   return
   #conv_output_image = Ypred.permute(0, 2, 3, 1).detach().numpy()
   # print(conv_output_image)
