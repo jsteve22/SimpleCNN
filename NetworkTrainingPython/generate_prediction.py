@@ -143,9 +143,7 @@ def custom_test(model_name, Xtest):
 
   if model_name == "resnet18":
     def basic_block(inp, layer, first_stride=1):
-      t = inp.copy()
       output = wrapper_conv_layer(inp, f'{directory}/layer{layer}.conv1.weight.txt', pad=1, enc_scheme=enc_scheme, stride=first_stride)
-      assert t.all() == inp.all()
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.bn1.weight.txt', f'{directory}/layer{layer}.bn1.bias.txt', f'{directory}/layer{layer}.bn1.running_mean.txt', f'{directory}/layer{layer}.bn1.running_var.txt')
       output = ReLU(output)
       output = wrapper_conv_layer(output, f'{directory}/layer{layer}.conv2.weight.txt', pad=1, enc_scheme=enc_scheme, stride=1)
@@ -155,49 +153,50 @@ def custom_test(model_name, Xtest):
       print(f'output.shape: {output.shape}')
       print()
       # output = ReLU(output)
-      output = residual(inp, output)
-      output = ReLU(output)
       return output
     
     def downsample(inp, layer):
-      output = wrapper_conv_layer(inp, f'{directory}/layer{layer}.downsample.0.weight.txt', pad=1, enc_scheme=enc_scheme, stride=2)
+      output = wrapper_conv_layer(inp, f'{directory}/layer{layer}.downsample.0.weight.txt', pad=0, enc_scheme=enc_scheme, stride=2)
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.downsample.1.weight.txt', f'{directory}/layer{layer}.downsample.1.bias.txt', f'{directory}/layer{layer}.downsample.1.running_mean.txt', f'{directory}/layer{layer}.downsample.1.running_var.txt')
       return output
+    
+    def _layer(inp, n, _downsample=False, first_stride=1):
+      save_inp = inp.copy()
+      if _downsample:
+        save_inp = downsample(inp, n)
+      output = basic_block(inp, n, first_stride)
+      output = residual(save_inp, output)
+      output = ReLU(output)
+      return output
 
-    test = [[[1]*16]*16]*64
-    test = np.array(test) 
+
+    #test = [[[1]*16]*16]*64
+    #test = np.array(test) 
     # begin
-   # output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
+    output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
     #print(output.shape)
-    #output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
-    #output = ReLU(output)
+    output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
+    output = ReLU(output)
     # pad before max pool
-    #output = conv_layer_prediction.pad_images(output, 1)
-    #output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
-
+    output = conv_layer_prediction.pad_images(output, 1)
+    output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
     # layer 1.0
-    output = basic_block(test, "1.0")
-    #output = ReLU(output)
+    output = _layer(output, "1.0")
     # layer 1.1
-    output = basic_block(output, "1.1")
-    print(output.shape)
-    print(output[0])
-    return
+    output = _layer(output, "1.1")
     # layer 2.0
-    output = basic_block(output, "2.0", first_stride=2)
-    output = downsample(output, "2.0")
+    output = _layer(output, "2.0", _downsample=True, first_stride=2)
     # layer 2.1
-    output = basic_block(output, "2.0")
+    output = _layer(output, "2.1")
     # layer 3.0
-    output = basic_block(output, "3.0", first_stride=2)
-    output = downsample(output, "3.0")
+    output = _layer(output, "3.0", _downsample=True, first_stride=2)
     # layer 3.1
-    output = basic_block(output, "3.1")
+    output = _layer(output, "3.1")
     # layer 4.0
-    output = basic_block(output, "4.0", first_stride=2)
-    output = downsample(output, "4.0")
+    output = _layer(output, "4.0", _downsample=True, first_stride=2)
     # layer 4.1
-    output = basic_block(output, "4.1")
+    output = _layer(output, "4.1")
+
     # adaptive avg pooling ?
     output = mean_pooling_layer_prediction.adaptive_mean_pooling_layer(output, output_shape=(1, 1))
 
@@ -221,7 +220,7 @@ def custom_test(model_name, Xtest):
     output = dense_output
 
   print(f'Prediction: [', end=' ')
-  for pred in output:
+  for pred in output[:100]:
     pred = float(pred)
     print(f'{pred:.7f}', end=' ')
   print(']')
@@ -248,9 +247,6 @@ def tf_test(model_name, Xtest, Ytest):
   model = torchvision.models.resnet18()
   model.load_state_dict(torch.load('./models/resnet18.pth'))
 
-
-  print(Xtest.shape)
-
   Xtest = np.expand_dims(Xtest, 0)
   Xtest = torch.Tensor(Xtest)
   # print(f'Xtest: {Xtest}')
@@ -260,21 +256,23 @@ def tf_test(model_name, Xtest, Ytest):
 
   # Ypred = model.predict( Xtest )
   model.eval()
+
+  #test = [[[[1]*16]*16]*64]
+  #test = torch.Tensor(test)
   #temp = model.conv1(Xtest)
   #temp = model.bn1(temp)
   #temp = model.relu(temp)
   #temp = model.maxpool(temp)
+  #temp = model.layer1(temp)
+  #temp = model.layer2(temp)
+  #temp = model.layer3(temp)
+  #temp = model.layer4(temp)
 
-  test = [[[[1]*16]*16]*64]
-  test = torch.Tensor(test)
-  output = model.layer1(test)
-  # output = model.layer1[0].conv1(test)
-  # output = model.layer1[0].bn1(output)
-  # output = model.layer1[0].relu(output)
-  # output = model.layer1[0].conv2(output)
-  print(output.shape)
-  print(output[0][0])
-  return
+  #output = model.avgpool(temp)
+  #print(output.shape)
+  #print(output[0])
+  #return
+  
   #conv_output_image = Ypred.permute(0, 2, 3, 1).detach().numpy()
   # print(conv_output_image)
   # print(output)
@@ -282,7 +280,7 @@ def tf_test(model_name, Xtest, Ytest):
   with torch.no_grad():
     Ypred = model(Xtest)
   print(f'Prediction: [', end=' ')
-  for pred in Ypred[0]:
+  for pred in Ypred[0][:100]:
     pred = float(pred)
     print(f'{pred:.7f}', end=' ')
   print(']')
