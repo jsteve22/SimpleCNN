@@ -19,8 +19,8 @@ def single_convolution(image, image_height, image_width, kernel, kernel_height, 
 
     i = 0
     j = 0
-    for img_i in range(0, image_height - kernel_height, stride):
-        for img_j in range(0, image_width - kernel_width, stride):
+    for img_i in range(0, image_height - kernel_height + 1, stride):
+        for img_j in range(0, image_width - kernel_width + 1, stride):
             z1[i][j] = 0
             for k1 in range(kernel_height):
                 for k2 in range(kernel_width):
