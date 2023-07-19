@@ -14,6 +14,7 @@ import save_mnist_test
 from print_outputs import print_1D_output, print_3D_output
 import torch
 import torchvision
+from residual import residual
 
 def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
@@ -147,6 +148,9 @@ def custom_test(model_name, Xtest):
       output = ReLU(output)
       output = wrapper_conv_layer(output, f'{directory}/layer{layer}.conv2.weight.txt', pad=1, enc_scheme=enc_scheme, stride=1)
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.bn2.weight.txt', f'{directory}/layer{layer}.bn2.bias.txt', f'{directory}/layer{layer}.bn2.running_mean.txt', f'{directory}/layer{layer}.bn2.running_var.txt')
+      print(inp.shape, output.shape)
+      output = residual(inp, output)
+      output = ReLU(output)
       return output
     
     def downsample(inp, layer):
@@ -154,18 +158,19 @@ def custom_test(model_name, Xtest):
       output = batch_norm.batch_main(output, f'{directory}/layer{layer}.downsample.1.weight.txt', f'{directory}/layer{layer}.downsample.1.bias.txt', f'{directory}/layer{layer}.downsample.1.running_mean.txt', f'{directory}/layer{layer}.downsample.1.running_var.txt')
       return output
 
-    test = [[[1]*32]*32]*64
+    test = [[[0]*16]*16]*64
     test = np.array(test) 
     # begin
-    output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
+   # output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2)
     #print(output.shape)
-    output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
-    output = ReLU(output)
+    #output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt')
+    #output = ReLU(output)
     # pad before max pool
-    output = conv_layer_prediction.pad_images(output, 1)
-    output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
+    #output = conv_layer_prediction.pad_images(output, 1)
+    #output = max_pooling_layer.max_pooling_layer(output, (3, 3), stride=2)
     # layer 1.0
     output = basic_block(test, "1.0")
+    #output = ReLU(output)
     # layer 1.1
     output = basic_block(output, "1.1")
     print(output)
@@ -247,11 +252,14 @@ def tf_test(model_name, Xtest, Ytest):
 
   # Ypred = model.predict( Xtest )
   model.eval()
-  temp = model.conv1(Xtest)
-  temp = model.bn1(temp)
-  temp = model.relu(temp)
-  temp = model.maxpool(temp)
-  output = model.layer1(temp)
+  #temp = model.conv1(Xtest)
+  #temp = model.bn1(temp)
+  #temp = model.relu(temp)
+  #temp = model.maxpool(temp)
+
+  test = [[[[0]*16]*16]*64]
+  test = torch.Tensor(test)
+  output = model.layer1(test)
   print(output)
   return
   #conv_output_image = Ypred.permute(0, 2, 3, 1).detach().numpy()
