@@ -21,18 +21,18 @@ def load_pickle(filename):
     return pkl.load(f)
 
 def main():
-  # model_name = 'miniONN_cifar_model'
-  model_name = 'resnet18'
-  # single_test = load_pickle('cifar_test.pkl')
-  # Xtest = single_test[0]
-  # Ytest = single_test[1]
-  Xtest = [[[1]*64] * 64]*3
-  Xtest = np.array(Xtest)
-  Ytest = [[[1]*64] * 64]
-  Ytest = np.array(Ytest)
-  Ytest = np.reshape(Ytest, (64, 64, 1))
+  model_name = 'miniONN_cifar_model'
+  # model_name = 'resnet18'
+  single_test = load_pickle('cifar_test.pkl')
+  Xtest = single_test[0]
+  Ytest = single_test[1]
+  # jXtest = [[[1]*64] * 64]*3
+  # Xtest = np.array(Xtest)
+  # Ytest = [[[1]*64] * 64]
+  # Ytest = np.array(Ytest)
+  # Ytest = np.reshape(Ytest, (64, 64, 1))
   tf_test(model_name, Xtest, Ytest)
-  Xtest = np.reshape(Xtest, (64, 64, 3))
+  # Xtest = np.reshape(Xtest, (64, 64, 3))
   custom_test(model_name, Xtest)
   return
 
@@ -95,27 +95,27 @@ def custom_test(model_name, Xtest):
   OUTPUT_PRINT = lambda output: print(output.reshape( np.prod(output.shape) ).astype(int)[:100])
   
   if model_name == "miniONN_cifar_model":
-    output = wrapper_conv_layer( Xtest, f'{directory}/conv2d.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    output = wrapper_conv_layer( Xtest, f'{directory}/conv2d.kernel.txt', pad=1, enc_scheme=enc_scheme )
     print_3D_output('./output_files/1_conv_output.txt', output)
     output = ReLU(output)
     print_1D_output('./output_files/2_relu_output.txt', output)
-    output = wrapper_conv_layer( output, f'{directory}/conv2d_1.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_1.kernel.txt', pad=1, enc_scheme=enc_scheme )
     print_3D_output('./output_files/3_conv_output.txt', output)
     output = ReLU(output)
     print_1D_output('./output_files/4_relu_output.txt', output)
     output = mean_pooling_layer_prediction.mean_pooling_layer( output )
     print_3D_output('./output_files/5_meanpool_output.txt', output)
-    output = wrapper_conv_layer( output, f'{directory}/conv2d_2.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_2.kernel.txt', pad=1, enc_scheme=enc_scheme )
     print_3D_output('./output_files/6_conv_output.txt', output)
     output = ReLU(output)
     print_1D_output('./output_files/7_relu_output.txt', output)
-    output = wrapper_conv_layer( output, f'{directory}/conv2d_3.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_3.kernel.txt', pad=1, enc_scheme=enc_scheme )
     print_3D_output('./output_files/8_conv_output.txt', output)
     output = ReLU(output)
     print_1D_output('./output_files/9_relu_output.txt', output)
     output = mean_pooling_layer_prediction.mean_pooling_layer( output )
     print_3D_output('./output_files/10_meanpool_output.txt', output)
-    output = wrapper_conv_layer( output, f'{directory}/conv2d_4.kernel.txt', padded=True, enc_scheme=enc_scheme )
+    output = wrapper_conv_layer( output, f'{directory}/conv2d_4.kernel.txt', pad=1, enc_scheme=enc_scheme )
     print_3D_output('./output_files/11_conv_output.txt', output)
     output = ReLU(output)
     print_1D_output('./output_files/12_relu_output.txt', output)
@@ -135,11 +135,23 @@ def custom_test(model_name, Xtest):
     # output = dense_layer_prediction.dense_layer( output, dense_kernel)
     dense_output = [0] * 10
 
+    '''
     split = 4000
     for i in range(0, width*height*filters, split):
       temp = dense_layer_prediction.dense_layer( output[i:min(i+split, width*height*filters - i)], dense_kernel[:][i:min(i+split, width*height*filters - i)])
       for j in range(len(temp)):
         dense_output[j] += temp[j]
+    '''
+    dense_output = dense_layer_prediction.dense_layer(output, dense_kernel)
+    output = dense_output
+
+    output = dense_layer_prediction.softmax( output )
+    print(f'Prediction: [', end=' ')
+    for pred in output:
+      pred = float(pred)
+      print(f'{pred:.7f}', end=' ')
+    print(']')
+    return output
 
   if model_name == "resnet18":
     def basic_block(inp, layer, first_stride=1):
@@ -243,18 +255,20 @@ def custom_test(model_name, Xtest):
 
 def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
-  # model = tf.keras.models.load_model(f'./models/{model_name}.h5')
-  model = torchvision.models.resnet18()
-  model.load_state_dict(torch.load('./models/resnet18.pth'))
+  model = tf.keras.models.load_model(f'./models/{model_name}.h5')
+  # model = torchvision.models.resnet18()
+  # model.load_state_dict(torch.load('./models/resnet18.pth'))
 
   Xtest = np.expand_dims(Xtest, 0)
-  Xtest = torch.Tensor(Xtest)
+  # Xtest = torch.Tensor(Xtest)
   # print(f'Xtest: {Xtest}')
   # print(f'Xtest shape: {Xtest.shape}')
   # print(f'Ytest: {Ytest}')
   # print(f'Ytest shape: {Ytest.shape}')
 
-  # Ypred = model.predict( Xtest )
+  Ypred = model.predict( Xtest )
+  print(Ypred[0])
+  return
   model.eval()
 
   #test = [[[[1]*16]*16]*64]
