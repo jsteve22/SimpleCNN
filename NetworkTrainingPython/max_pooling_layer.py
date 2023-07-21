@@ -5,7 +5,7 @@ def max_pooling(input_layer, shape=(3,3), stride=1):
   width, height = input_layer.shape
   fw, fh = shape
   # output = np.zeros( (width // fw, height // fh ), dtype=int )
-  output = np.zeros( ((width - fw) // stride + 1, (height - fh) // stride + 1 ) )
+  output = np.zeros( ((width - fw) // stride + 1, (height - fh) // stride + 1 ), dtype=input_layer.dtype )
 
   i = 0
   j = 0

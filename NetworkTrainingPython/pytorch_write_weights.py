@@ -6,6 +6,8 @@ import os
 
 def write_weights(model, model_name, write_ints=True):
     model_name = model_name
+    if (write_ints):
+        model_name = 'int_' + model_name
 
     try:
         os.mkdir(f'./model_weights/{model_name}')
@@ -36,7 +38,10 @@ def write_weights(model, model_name, write_ints=True):
         numpy_layer = numpy_layer.reshape(total_sz)
         for i in numpy_layer:
             if (write_ints):
-                fp.write(f"{int(i * (2**8))} ")
+                if "running_var" in layer_name:
+                    fp.write(f"{int(np.sqrt(i) * (2**16))} ")
+                    continue
+                fp.write(f"{int(i * (2**16))} ")
             else:
                 fp.write(f"{i} ")
         fp.close()
@@ -52,7 +57,7 @@ def write_conv_kernel(filepointer, numpy_layer, name, model_name, write_ints=Tru
     write_layer = numpy_layer.reshape(total_sz)
     for i in write_layer:
         if (write_ints):
-            filepointer.write(f"{int(i * (2**8))} ")
+            filepointer.write(f"{int(i * (2**16))} ")
         else:
             filepointer.write(f"{i} ")
     filepointer.close()
@@ -68,7 +73,7 @@ def write_dense_kernel(filepointer, numpy_layer, name, model_layer_index, model_
     numpy_layer = numpy_layer.reshape(total_sz)
     for i in numpy_layer:
         if (write_ints):
-            filepointer.write(f"{int(i * (2**8))} ")
+            filepointer.write(f"{int(i * (2**16))} ")
         else:
             filepointer.write(f"{i} ")
     filepointer.close()
@@ -88,7 +93,7 @@ def read_weights(file_name):
 def main():
     model = models.resnet18()
     model.load_state_dict(torch.load('./models/resnet18.pth'))
-    write_weights(model, 'resnet18', False) 
+    write_weights(model, 'resnet18', True) 
 
 if __name__ == '__main__':
     main()

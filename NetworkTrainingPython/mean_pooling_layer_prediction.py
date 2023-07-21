@@ -3,7 +3,7 @@ import numpy as np
 
 def mean_pooling(input_layer, shape=(2,2)):
   width, height = input_layer.shape
-  output = np.zeros( (width // shape[0], height // shape[1] ), dtype=int )
+  output = np.zeros( (width // shape[0], height // shape[1] ), dtype=input_layer.dtype )
   fw, fh = shape
 
   for ind, row in enumerate(output):
@@ -12,8 +12,8 @@ def mean_pooling(input_layer, shape=(2,2)):
       for fi in range(fw):
         for fj in range(fh):
           total += input_layer[ind + fi][jnd + fj]
-      output[ind][jnd] = total // (fw*fh)
-  return output
+      output[ind][jnd] = total / (fw*fh)
+  return output.astype(input_layer.dtype)
 
 def mean_pooling_layer(inputs, shape=(2,2)):
   channels, *_ = inputs.shape
