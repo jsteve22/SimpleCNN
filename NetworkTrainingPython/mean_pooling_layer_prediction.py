@@ -19,7 +19,7 @@ def mean_pooling(input_layer, shape=(2,2), stride=1):
       j += 1 
     j = 0
     i += 1  
-  return output
+  return output.astype(input_layer.dtype)
 
 def mean_pooling_layer(inputs, padding=0, stride=1, shape=(2,2)):
   if padding:

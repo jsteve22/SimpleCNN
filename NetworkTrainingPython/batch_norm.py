@@ -31,20 +31,22 @@ def mini_batch(vectors, beta, gamma, ma_mean, ma_var, alpha):
     for vec in norm_vectors:
         output.append(gamma*vec + beta)
     
-def batch_normalize(vectors, ma_mean, ma_var, e):
+def batch_normalize(vectors, ma_mean, ma_var, e, as_ints=False):
     normalized = np.zeros(vectors.shape)
     for i, vec in enumerate(vectors):
         normalized[i] = (vec - ma_mean[i]) / np.sqrt(ma_var[i])
-        # uncomment lines below for integer representation
-        # normalized[i] = (vec - ma_mean[i]) / int(np.sqrt(ma_var[i]))
-        # normalized[i] = normalized[i].astype(int)
+        if (as_ints):
+            normalized[i] = (vec - ma_mean[i])
     return normalized
 
-def batch_inference(vectors, gamma, beta, ma_mean, ma_var, e):
-    normalized = batch_normalize(vectors, ma_mean, ma_var, e)
+def batch_inference(vectors, gamma, beta, ma_mean, ma_var, e, as_ints=False):
+    normalized = batch_normalize(vectors, ma_mean, ma_var, e, as_ints)
     batch_output = np.zeros(vectors.shape)
     for i, vec in enumerate(normalized):
         batch_output[i] = (gamma[i]*vec + beta[i])
+        if (as_ints):
+            batch_output[i] = (vec*gamma[i]) / (ma_var[i] or 1)
+            batch_output[i] = batch_output[i].astype(int) + beta[i]
     return batch_output
 
 def read_batch_weights(weight_file, bias_file, mean_file, var_file):
@@ -54,7 +56,7 @@ def read_batch_weights(weight_file, bias_file, mean_file, var_file):
     ma_var = read_weights(var_file)
     return gamma, beta, ma_mean, ma_var
 
-def batch_main(batch_input, weight_file="bn1.weight.txt", bias_file="bn1.bias.txt", mean_file="bn1.running_mean.txt", var_file="bn1.running_var.txt", e=1**(-5)):
+def batch_main(batch_input, weight_file="bn1.weight.txt", bias_file="bn1.bias.txt", mean_file="bn1.running_mean.txt", var_file="bn1.running_var.txt", e=1**(-5), as_ints=False):
     gamma, beta, ma_mean, ma_var = read_batch_weights(weight_file, bias_file, mean_file, var_file)
-    output = batch_inference(batch_input, gamma, beta, ma_mean, ma_var, e)
+    output = batch_inference(batch_input, gamma, beta, ma_mean, ma_var, e, as_ints)
     return output
