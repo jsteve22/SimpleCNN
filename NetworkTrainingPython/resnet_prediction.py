@@ -87,6 +87,7 @@ def custom_test(model_name, Xtest):
   images = np.zeros( (image_channels, image_height, image_width))
 
   if (as_ints):
+    Xtest = scale_to_int(Xtest)
     images = np.zeros( (image_channels, image_height, image_width), dtype=int )
     model_name = 'int_' + model_name
 
@@ -134,6 +135,8 @@ def custom_test(model_name, Xtest):
   #test = np.array(test) 
   # begin
   output = wrapper_conv_layer(Xtest, f'{directory}/conv1.weight.txt', pad=3, enc_scheme=enc_scheme, stride=2, as_ints=as_ints)
+  # OUTPUT_PRINT(output)
+  # return
   #print(output.shape)
   output = batch_norm.batch_main(output, f'{directory}/bn1.weight.txt', f'{directory}/bn1.bias.txt', f'{directory}/bn1.running_mean.txt', f'{directory}/bn1.running_var.txt', as_ints=as_ints)
   output = ReLU(output)
