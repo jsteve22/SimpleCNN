@@ -15,6 +15,7 @@ from print_outputs import print_1D_output, print_3D_output
 import torch
 import torchvision
 from residual import residual
+import read_model
 
 def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
@@ -78,7 +79,7 @@ def wrapper_conv_layer(input_layer, layer_path, pad=0, enc_scheme=None, stride=1
 def custom_test(model_name, Xtest):
 
   # Load and reshape the test image
-  # Xtest = scale_to_int(Xtest)
+  Xtest = scale_to_int(Xtest)
   image_height, image_width, image_channels = Xtest.shape
   # images = np.zeros( (image_channels, image_height, image_width), dtype=int )
   images = np.zeros( (image_channels, image_height, image_width))
@@ -88,9 +89,18 @@ def custom_test(model_name, Xtest):
         images[ci][wi][hi] = c
   Xtest = images
 
-  directory = f'./model_weights/{model_name}'
+  #directory = f'./model_weights/{model_name}'
 
   enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
+
+  output = read_model.use_model("./model_weights/miniONN_cifar_model/summary.txt", Xtest, enc_scheme)
+
+  print(f'Prediction: [', end=' ')
+  for pred in output:
+    pred = float(pred)
+    print(f'{pred:.7f}', end=' ')
+  print(']')
+  return 
 
   OUTPUT_PRINT = lambda output: print(output.reshape( np.prod(output.shape) ).astype(int)[:100])
   

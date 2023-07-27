@@ -28,14 +28,15 @@ def read_model(filename):
         model = Model(info[0], info[1]) 
         for line in fp.readlines():
             layer_list = line.split(",")
+            layer_list = [x.strip() for x in layer_list]
             if "conv2d" in layer_list[0]:
                 conv = Layer(layer_list[0])
                 conv.path = layer_list[1]
-                if layer_list[2] is not "None":     
+                if layer_list[2] != "None":     
                     conv.activation = layer_list[2]
                 conv.padding = int(layer_list[3])
                 conv.stride = int(layer_list[4])
-                if layer_list[5] is not "_":
+                if layer_list[5] != "_":
                     conv.bias = layer_list[5]
                 model.layers.append(conv)
             if "meanpooling" in layer_list[0]:
@@ -47,9 +48,9 @@ def read_model(filename):
             if "dense" in layer_list[0]:
                 dense = Layer(layer_list[0])
                 dense.path = layer_list[1]
-                if layer_list[2] is not "None":
+                if layer_list[2] != "None":
                     dense.activation = layer_list[2]
-                if layer_list[3] is not "_":
+                if layer_list[3] != "_":
                     dense.bias = layer_list[3]
                 model.layers.append(dense)
             if "flatten" in layer_list[0]:
@@ -59,9 +60,10 @@ def read_model(filename):
 
 def use_model(filename, test, enc_scheme):
     model = read_model(filename)
+    output = test.copy()
     for layer in model.layers:
         if "conv2d" in layer.name:
-            output = wrapper_conv_layer( test, layer.path, pad=layer.padding, enc_scheme=enc_scheme )
+            output = wrapper_conv_layer( output, layer.path, pad=layer.padding, enc_scheme=enc_scheme )
             if layer.activation == "relu":
                output = ReLU(output)
         if "meanpooling" in layer.name:
@@ -80,7 +82,12 @@ def use_model(filename, test, enc_scheme):
                 temp = dense_layer_prediction.dense_layer( output[i:min(i+split, width*height*filters - i)], dense_kernel[:][i:min(i+split, width*height*filters - i)])
                 for j in range(len(temp)):
                     dense_output[j] += temp[j]
+            output = dense_output
 
+            output = dense_layer_prediction.softmax( output )
+    return output
+
+P_2_SCALE = 8
 
 def wrapper_conv_layer(input_layer, layer_path, pad=0, enc_scheme=None, stride=1):
   layer = input_layer.copy()
@@ -88,12 +95,11 @@ def wrapper_conv_layer(input_layer, layer_path, pad=0, enc_scheme=None, stride=1
     layer = conv_layer_prediction.pad_images( layer, pad )
   output = conv_layer_prediction.conv_layer_prediction( layer, read_weights(layer_path), stride, enc_scheme )
   output = np.array(output)
-  # output = scale_down(output, 2**P_2_SCALE)
+  #output = scale_down(output, 2**P_2_SCALE)
   layer_name = layer_path.split('/')[-1].split('.')[0]
   print(f'{layer_name} Done')
   return output
 
-P_2_SCALE = 8
 
 def scale_to_int(arr):
   scale = 2**P_2_SCALE
@@ -109,7 +115,7 @@ def ReLU(arr):
       for k, val in enumerate(row):
         if val < 0:
           ret[i][j][k] = 0
-  # ret = scale_down(ret, 2**P_2_SCALE)
+  ret = scale_down(ret, 2**P_2_SCALE)
   return ret
 
 def scale_down(arr, scale):
