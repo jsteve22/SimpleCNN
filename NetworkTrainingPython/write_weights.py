@@ -4,6 +4,12 @@ import numpy as np
 from dense_layer_prediction import transform_dense_kernel
 import os
 
+CONV2D = tf.keras.layers.Conv2D
+DENSE = tf.keras.layers.Dense
+AVG2D = tf.keras.layers.AveragePooling2D
+FLATTEN = tf.keras.layers.Flatten
+NO_ACTIVATION = 'none'
+
 def write_weights(model_name, image_shape, write_ints=True):
     model = tf.keras.models.load_model(f'models/{model_name}.h5')
     model_name = model_name
@@ -19,6 +25,21 @@ def write_weights(model_name, image_shape, write_ints=True):
 
     dense_kernel_h, dense_kernel_w, dense_kernel_f = 0, 0, 0
     image_height, image_width, image_channels, image_filters = image_shape
+
+
+    with open(f'./model_weights/{model_name}/summary.txt', 'w') as fw:
+        fw.write(f'{model_name}, {len(model.layers)}\n')
+        # print(write_conv_specs(model.layers[0], model_name))
+        for layer in model.layers:
+            if type(layer) == CONV2D:
+                fw.write(f'{write_conv_specs(layer, model_name)}\n')
+            if type(layer) == DENSE:
+                fw.write(f'{write_dense_specs(layer, model_name)}\n')
+            if type(layer) == AVG2D:
+                fw.write(f'{write_meanpooling_specs(layer)}\n')
+            if type(layer) == FLATTEN:
+                fw.write(f'{write_flatten_specs(layer)}\n')
+
 
     for key in weights_paths:
         layer = weights_paths[key]
@@ -133,6 +154,89 @@ def write_dense_kernel(filepointer, numpy_layer, name, model_layer_index, model_
     filepointer.close()
     return
 
+def write_conv_specs(conv_layer, model_name):
+    # format of line = "layer_name, path_to_weights, activation_function, padding, strides"
+    ret_string = f'conv2d, ./model_weights/{model_name}/{conv_layer.name}.kernel.txt'
+
+    # get activation function
+    activation = conv_layer.activation
+    if activation == tf.keras.activations.relu:
+        ret_string += ', relu'
+    else:
+        ret_string += ', {NO_ACTIVATION}'
+
+    # get padding and strides
+    padding = conv_layer.padding
+    strides = conv_layer.strides
+    if padding == 'valid':
+        ret_string += ', 0'
+    elif padding == 'same':
+        assert strides == (1, 1) # only works with strides of 1 right now
+        pad_num = int(conv_layer.kernel.shape[0] / 2)
+        ret_string += f', {pad_num}'
+
+    # add strides
+    ret_string += f', {strides[0]}'
+
+    if type(conv_layer.bias) != type(None):
+        ret_string += f', ./model_weights/{model_name}/{conv_layer.name}.bias.txt'
+    else:
+        ret_string += ', _'
+
+    return ret_string
+
+def write_dense_specs(dense_layer, model_name):
+    # format of line = "layer_name, path_to_weights, activation_function, bias_path"
+    ret_string = f'dense, ./model_weights/{model_name}/{dense_layer.name}.kernel.txt'
+
+    # get activation function
+    activation = dense_layer.activation
+    if activation == tf.keras.activations.softmax:
+        ret_string += ', softmax'
+    else:
+        ret_string += ', {NO_ACTIVATION}'
+
+    if type(dense_layer.bias) != type(None):
+        ret_string += f', ./model_weights/{model_name}/{dense_layer.name}.bias.txt'
+    else:
+        ret_string += ', _'
+
+    return ret_string
+
+def write_flatten_specs(flatten_layer):
+    # format of line = "layer_name"
+    ret_string = f'flatten'
+
+    return ret_string
+
+def write_meanpooling_specs(meanpooling_layer):
+    # format of line = "layer_name, shape, stride"
+    ret_string = f'meanpooling'
+
+    pool_size = meanpooling_layer.pool_size
+    strides = meanpooling_layer.strides
+
+    # assert square strides and shape
+    assert pool_size[0] == pool_size[1]
+    assert strides[0] == strides[1]
+
+    # add pool size 
+    ret_string += f', {pool_size[0]}'
+
+    # add padding
+    padding = meanpooling_layer.padding
+    if padding == 'valid':
+        ret_string += ', 0'
+    elif padding == 'same':
+        assert strides == (1, 1) # only works with strides of 1 right now
+        pad_num = int(meanpooling_layer.pool_size[0] / 2)
+        ret_string += f', {pad_num}'
+
+    # add stride
+    ret_string += f', {strides[0]}'
+
+    return ret_string
+
 def read_weights(file_name):
     with open(file_name, "r") as fp:
         line = fp.readline().rstrip()
@@ -149,5 +253,6 @@ def read_weights(file_name):
 if __name__ == '__main__':
     write_weights("miniONN_cifar_model", (32, 32, 3, 1), True)
     # write_weights("mnist_email_model", (28, 28, 1, 1))
+    # print()
     # write_weights("simple_model", (28, 28, 4, 1))
     #read_weights("dense.kernel.txt")
