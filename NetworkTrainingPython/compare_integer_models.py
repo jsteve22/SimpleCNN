@@ -11,6 +11,7 @@ from write_weights import write_weights, read_weights
 # from custom_bfv.bfv import BFV
 from custom_bfv.bfv_ntt import BFV
 import save_mnist_test
+import save_cifar_test
 from print_outputs import print_1D_output, print_3D_output
 import torch
 import torchvision
@@ -21,22 +22,6 @@ def load_pickle(filename):
   with open(f'{filename}', 'rb') as f:
     return pkl.load(f)
 
-def main():
-  model_name = 'miniONN_cifar_model'
-  # model_name = 'resnet18'
-  single_test = load_pickle('cifar_test.pkl')
-  Xtest = single_test[0]
-  Ytest = single_test[1]
-  # jXtest = [[[1]*64] * 64]*3
-  # Xtest = np.array(Xtest)
-  # Ytest = [[[1]*64] * 64]
-  # Ytest = np.array(Ytest)
-  # Ytest = np.reshape(Ytest, (64, 64, 1))
-  tf_test(model_name, Xtest, Ytest)
-  # Xtest = np.reshape(Xtest, (64, 64, 3))
-  custom_test(model_name, Xtest)
-  return
-
 P_2_SCALE = 8
 
 def scale_to_int(arr):
@@ -45,25 +30,6 @@ def scale_to_int(arr):
   # rescaled = np.round(rescaled)
   return rescaled.astype(int)
 
-def ReLU(arr):
-  ret = arr.copy()
-  
-  for i, image in enumerate(ret):
-    for j, row in enumerate(image):
-      for k, val in enumerate(row):
-        if val < 0:
-          ret[i][j][k] = 0
-  # ret = scale_down(ret, 2**P_2_SCALE)
-  return ret
-
-def scale_down(arr, scale):
-  ret = arr.copy()
-  
-  for i, image in enumerate(ret):
-    for j, row in enumerate(image):
-      for k, val in enumerate(row):
-        ret[i][j][k] = val // scale
-  return ret
 
 def wrapper_conv_layer(input_layer, layer_path, pad=0, enc_scheme=None, stride=1):
   layer = input_layer.copy()
@@ -102,7 +68,7 @@ def custom_test(model_name, Xtest):
     pred = float(pred)
     print(f'{pred:.7f}', end=' ')
   print(']')
-  return 
+  return output
 
 def tf_test(model_name, Xtest, Ytest):
   # model_name = 'small_model'
@@ -118,9 +84,15 @@ def tf_test(model_name, Xtest, Ytest):
   # print(f'Ytest shape: {Ytest.shape}')
 
   Ypred = model.predict( Xtest )
-  print(Ypred[0])
-  return
+  print(f'Prediction: [', end=' ')
+  for pred in Ypred[0][:100]:
+    pred = float(pred)
+    print(f'{pred:.7f}', end=' ')
+  print(']')
+  print(f'Acutal: {Ytest}')
+  return Ypred[0]
   model.eval()
+
 
   with torch.no_grad():
     Ypred = model(Xtest)
@@ -132,6 +104,32 @@ def tf_test(model_name, Xtest, Ytest):
   # print(f'Acutal: {Ytest}')
   return Ypred[0]
 
+def main():
+  num_tests = 10
+  same_pred = 0
+  total_diff = 0
+  diff_arr = []
+  for i in range(num_tests):
+    save_cifar_test.main(i)
+    print(f'Test {i+1}')
+    print('---'*8)
+    model_name = 'miniONN_cifar_model'
+    single_test = load_pickle('cifar_test.pkl')
+    Xtest = single_test[0]
+    Ytest = single_test[1]
+    tf_output  = tf_test(model_name, Xtest, Ytest)
+    our_output = custom_test(model_name, Xtest)
+    if ( np.argmax(tf_output) == np.argmax(our_output) ):
+      same_pred += 1
+    diff = sum(map(abs, [t-o for t,o in zip(tf_output, our_output) ]))
+    diff_arr.append( diff )
+    total_diff += diff
+    print(f'diff: {diff}')
+    print('\n'*2)
+  print(f'total diff:   {total_diff}')
+  print(f'average diff: {total_diff / num_tests}')
+  print(f'standard dev: {np.std(diff_arr)}')
+  print(f'same pred:    {same_pred} / {num_tests}')
+
 if __name__ == '__main__':
-  # test_many_mnist_examples()
   main()

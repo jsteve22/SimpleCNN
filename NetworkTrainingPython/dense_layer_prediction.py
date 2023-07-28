@@ -105,14 +105,11 @@ def softmax(input_layer):
     output_layer = [exp(val) / exp_sum for val in input_layer]
     return output_layer
   except OverflowError:
-    exp_vals = []
-    for val in input_layer:
-      try:
-        exp_vals.append( exp(val) )
-      except OverflowError:
-        exp_vals.append( float(1000) )
-    print(f'Warning OverflowError: \n\tinput = {input_layer}\n\texp_vals = {exp_vals}')
-    output_layer = [exp_val / sum(exp_vals) for exp_val in exp_vals]
+    exp_vals = input_layer.copy()
+    while max(exp_vals) > 256:
+      exp_vals = [exp_val / 256 for exp_val in exp_vals]
+    exp_sum = sum( [exp(val) for val in exp_vals] )
+    output_layer = [exp(val) / exp_sum for val in exp_vals]
     return output_layer
 
 
