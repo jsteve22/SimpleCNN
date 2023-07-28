@@ -23,8 +23,10 @@ def load_pickle(filename):
 
 def main():
   model_name = 'miniONN_cifar_model'
+  model_name = 'simple_model'
   # model_name = 'resnet18'
   single_test = load_pickle('cifar_test.pkl')
+  single_test = load_pickle('single_test.pkl')
   Xtest = single_test[0]
   Ytest = single_test[1]
   # jXtest = [[[1]*64] * 64]*3
@@ -93,7 +95,7 @@ def custom_test(model_name, Xtest):
 
   enc_scheme = BFV(q = 2**38, t = 2**25, n = 2**10)
 
-  output = read_model.use_model("./model_weights/miniONN_cifar_model/summary.txt", Xtest, enc_scheme)
+  output = read_model.use_model(f"./model_weights/{model_name}/summary.txt", Xtest, enc_scheme)
 
   print(f'Prediction: [', end=' ')
   for pred in output:
