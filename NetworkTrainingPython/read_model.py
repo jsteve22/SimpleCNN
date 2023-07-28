@@ -83,7 +83,7 @@ def use_model(filename, test, enc_scheme):
                 for j in range(len(temp)):
                     dense_output[j] += temp[j]
             output = dense_output
-
+            # output = np.array(output) / (2**(P_2_SCALE*2))
             output = dense_layer_prediction.softmax( output )
     return output
 
